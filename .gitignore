@@ -1,0 +1,9 @@
+__pycache__/
+Data/
+mod/
+Paper/
+x86_64/
+test*
+*.egg-info
+*.xlsx
+*.out
