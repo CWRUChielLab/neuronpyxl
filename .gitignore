@@ -7,3 +7,4 @@ test*
 *.egg-info
 *.out
 sim_log.txt
+results.csv
