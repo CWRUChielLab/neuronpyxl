@@ -51,24 +51,27 @@ class NetworkBuilder:
         if platform.uname()[0] == "Windows":
             h.nrn_load_dll(os.path.join(self.cwd, "nrnmech.dll"))
         self.name = "sim"
-        self.cells = {} # Dict[cell name -> Cell object]
+        self.cells = {} # Dict[cell name -> Cell object] (see cell.py)
         
         # To prevent garbage collection, store all necessary objects:
         self.electrical_synapses = {} # Dict[presynaptic cell name -> Dict[postsynaptic cell name -> PointProcess]]
-        self.chemical_synapses = {"fast": {}, "slow": {}} # Dict[presynaptic cell name -> Dict[postsynaptic cell name -> Dict["synapse" -> PointProcess, "netcon" -> NetCon]]]
-        # self.noise = {"interval": noise[0], "amp": noise[1]}
-        self.input_resistance = {}
+        self.chemical_synapses = {"fast": {}, "slow": {}} # Dict[synapse type -> Dict[presynaptic cell name -> Dict[postsynaptic cell name -> Dict["synapse" -> PointProcess, "netcon" -> NetCon]]]]
+        self.input_resistance = {} # stores input resistances
         if noise is not None:
             self.noise = {"rate": noise[0], "weight": noise[1], "tau": noise[2]}
         else:
             self.noise = None
         self.noise_cons = {}
+        
+        # There can be multiple clamps at the same location. This may be deprecated at some point, because this model uses 0.5 as the default and only location.
         self.current_clamps = {} # Dict[cell name -> Dict[location -> List[IClamp]]]
         self.voltage_clamps = {} # Dict[cell name -> Dict[location -> List[VClamp]]
         self.pools_active = {}
-        self.zero_ref = h.Vector(1) # Create a 0 reference in case there are unused currents
+        
+        self.zero_ref = h.Vector(1) # Create a 0 reference in case there are unused hoc pointers
         self.zero_ref.x[0] = 0  # Set the first element to zero
-        self.prefix = "pysnnap_"
+        
+        self.prefix = "pysnnap_" # mod file
         # Simulation setup parameters
         self.dt = -1
         self.integrator = 2 # can be 1 or 2 (1: Backwards Euler, 2: Crank-Nicholson)
@@ -453,11 +456,11 @@ class NetworkBuilder:
             
             syn1 = h.ExpSyn(cell.section(0.5))
             syn1.tau = self.noise["tau"]
-            syn1.e = e0
+            syn1.e = 0
             
             syn2 = h.ExpSyn(cell.section(0.5))
             syn2.tau = self.noise["tau"]
-            syn2.e = -e0
+            syn2.e = 2*e0
             
             Rin = self.input_resistance[name]
             # Connect the NetStim to the synapse via a NetCon

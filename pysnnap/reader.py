@@ -1,7 +1,8 @@
 """
 This file is part of PySNNAP.
 
-The ControlReader is a helper class to read in 
+The ControlReader is a helper class to read in the parameters from the Excel spreadsheet models.
+This code was taylored exactly to the format of the Excel spreadsheets, so changing this file in any major way is not recommended.
 
 Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
@@ -99,6 +100,7 @@ class ControlReader:
         self.csfat_nums = {"fast": {}, "slow": {}}
         for i, (presyn, row) in enumerate(df_csfat_nums.iterrows()):
             for postsyn, val in row.dropna().items():
+                # Even rows are fast, odd rows are slow (1st row is 0)
                 if i % 2 == 0:
                     self.csfat_nums["fast"].setdefault(presyn, {})[postsyn] = val
                 else:
@@ -109,6 +111,7 @@ class ControlReader:
         self.csfat_params_fast = {}
         self.csfat_params_slow = {}
 
+        # Access the parameter based on the num from self.csfat_nums
         for presyn, d in self.csfat_nums["fast"].items():
             for postsyn, num in d.items():
                 self.csfat_params_fast.setdefault(presyn, {})[postsyn] = df_csfat_params.loc[num]

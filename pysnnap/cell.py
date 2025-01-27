@@ -50,7 +50,7 @@ class Cell:
         # Geometry
         self.section.L = L
         self.section.diam = diam
-        self.section.nseg = int((L/(0.1*h.lambda_f(100, self.section))+.999)/2)*2 + 1 # d_lambda rule
+        self.section.nseg = int((L/(0.1*h.lambda_f(100, self.section))+.999)/2)*2 + 1 # d_lambda rule, see NEURON docs
         self.area = {seg.x: self.section(seg.x).area()*1e-8 for seg in self.section} # maps area of cell at each location available in the cell. 0.5 is always a location in the cell
         
         # Biophysical properties

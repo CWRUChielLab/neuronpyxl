@@ -53,10 +53,10 @@ class ModBuilder:
         self.mechs = self.read_mechs() # Get the mechanisms present in the model
         
         
-    def run(self):
+    def run(self, cluster: bool = False):
         """Function to generate all of the mod files.
         """
-        self.clear_dir("./mod")
+        self.clear_dir("./mod", cluster)
         shutil.copy(self.modls_path.joinpath("cs.mod"), self.mod_path) # Copies cs.mod and es.mod whether or not they are specified in the spreadsheet.
         shutil.copy(self.modls_path.joinpath("es.mod"), self.mod_path)
         self.gen_mech_mods() # generate current mechanism mod files
@@ -125,7 +125,7 @@ class ModBuilder:
         return [re.sub(r'[^a-zA-Z0-9]', '', m.lower().strip()) for m in mechs]
 
 
-    def clear_dir(self, dir_path: str):
+    def clear_dir(self, dir_path: str, cluster:bool = False):
         """Function to clear a directory or create a new one if one doesn't exist. If dir_path does exist, prompts the user if it is okay to clear that directory.
 
         Args:
@@ -133,7 +133,10 @@ class ModBuilder:
         """
         if os.path.exists(dir_path):
             # Directory exists, empty it
-            del_dir = input(f"Clear out contents of {dir_path}? (y/n) ") == "y"
+            if cluster:
+                del_dir = True
+            else:
+                del_dir = input(f"Clear out contents of {dir_path}? (y/n) ") == "y"
             if not del_dir:
                 sys.exit()
             shutil.rmtree(dir_path)  # Remove the directory and its contents
@@ -170,7 +173,7 @@ class ModBuilder:
                 "na": "\tUSEION na READ nai",
                 "cl": "\tUSEION cl READ cli"}
         for ch in self.mechs:
-            if ch == "leak":
+            if ch == "leak": # copy the leak mod file if the mechanism is leak.
                 shutil.copy(self.modls_path.joinpath("leak.mod"), self.mod_path)
             else:
                 line12 = []

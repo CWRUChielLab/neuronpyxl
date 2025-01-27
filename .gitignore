@@ -6,3 +6,4 @@ x86_64/
 test*
 *.egg-info
 *.out
+sim_log.txt

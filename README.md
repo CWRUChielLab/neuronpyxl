@@ -1,4 +1,4 @@
-# PySNNAP
+# pySNNAP
 
 *A tool to run SNNAP-based models from a spreadsheet interface using the NEURON simulator via Python*
 
@@ -62,7 +62,7 @@ All possible arguments:
 - --atol tol: optional argument to specify the absolute error tolernace of the integration. Defaults to 1e-5.
 - --syn: optional with no arguments. If provided, will record the currents from chemical and electrical synapses if available
 - --vonly: optional with no arguments. If provided, will record the membrane potentials and time from each cell only.
-- --teq: Sets equilibration time to provided value. Defaults to 1000.0 ms. User should test model for
+- --teq t: Sets equilibration time to provided value. Defaults to 1000.0 ms. User should test model for
 ideal values of teq.
 
 The data recorded from each cell is recorded in its own .h5 file within the folder. If --vonly is provided, then records all data into one file. If --syn is provided, records electrical and chemical synaptic currents in their own respective files, if they exist. If --vonly and --syn are provided, defaults to --vonly. To access the data, write the following code:
