@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 # Requirements for use
 reqs = [
-    "numpy>=1.24.4",
+    "numpy>=2.1.2",
     "pandas>=2.2.3",
     "XlsxWriter>=3.2.0",
     "openpyxl>=3.1.5",
