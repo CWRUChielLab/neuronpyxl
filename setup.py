@@ -7,7 +7,8 @@ reqs = [
     "XlsxWriter>=3.2.0",
     "openpyxl>=3.1.5",
     "tables>=3.10.1",
-    "neuron>=8.2.4"
+    "neuron>=8.2.4",
+    "scipy==1.15.1"
 ]
 
 # List of all modules involved with the project

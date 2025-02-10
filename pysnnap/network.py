@@ -32,11 +32,12 @@ import sys
 import os
 import platform
 import time
+from scipy.interpolate import CubicSpline
 from pysnnap import cell, reader
 from typing import Tuple
 
 class NetworkBuilder:
-    def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float):
+    def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float):
         """_summary_
 
         Args:
@@ -74,14 +75,14 @@ class NetworkBuilder:
         self.prefix = "pysnnap_" # mod file
         # Simulation setup parameters
         self.dt = dt
-        self.integrator = 2 # can be 1 or 2 (1: Backwards Euler, 2: Crank-Nicholson)
+        self.integrator = integrator # can be 1 or 2 (1: Backwards Euler, 2: Crank-Nicholson)
         match self.integrator:
             case 1:
                 self.secondorder = 0
             case 2:
                 self.secondorder = 2
+        self.atol = atol
         self.interp = 0.005
-        self.atol = 1e-5
         self.v0 = {}
         self.eq_time = 1000
         self.simdur = 10000
@@ -667,7 +668,7 @@ class NetworkBuilder:
             temp (float, optional): Temperature to set simulation at. Defaults to 6.3 (giant squid axon model temperature).
             at_locs (List[float], optional): Provide the locations on the segment to record in every cell. Will error if a location is not on the segment. Defaults to [0.5].
             all_locs (boolean, optional): If true, will record data at every location in the segment in every cell and ignores at_locs argument. Defaults to False.
-        """
+        """ 
         if self.ran_before:
             # self.reset_recordings()
             self.equilibrate()
@@ -788,10 +789,15 @@ class NetworkBuilder:
         """
         cell_data = self.get_cell_data(name, loc)
         t = cell_data["t"]
+        tu, ind = np.unique(t, return_index=True)  # get indices of unique times in case of duplicates
         cell_interp = {"t": tvec}
         for k, v in cell_data.items():
             if k != "t":
-                cell_interp[k] = np.interp(tvec, t, v)
+                # cell_interp[k] = np.interp(tvec, t, v)
+                vu = v[ind]
+                cs = CubicSpline(tu,vu)
+                cell_interp[k] = cs(tvec)
+                
         return cell_interp
     
     
@@ -808,17 +814,25 @@ class NetworkBuilder:
         if chem_data is not None:
             chem_interp = {"t": tvec}
             tchem = chem_data["t"]
+            tu, ind = np.unique(tchem, return_index=True)
             for k, v in chem_data.items():
                 if k != "t":
-                    chem_interp[k] = np.interp(tvec, tchem, v)
+                    # chem_interp[k] = np.interp(tvec, tchem, v)
+                    vu = v[ind]
+                    cs = CubicSpline(tu,vu)
+                    chem_interp[k] = cs(tvec)
         else:
             chem_interp = None
         if elec_data is not None:
             elec_interp = {"t": tvec}
             telec = elec_data["t"]
+            tu, ind = np.unique(telec, return_index=True)
             for k, v in elec_data.items():
                 if k != "t":
-                    elec_interp[k] = np.interp(tvec, telec, v)
+                    # elec_interp[k] = np.interp(tvec, telec, v)
+                    vu = v[ind]
+                    cs = CubicSpline(tu,vu)
+                    elec_interp[k] = cs(tvec)
         else:
             elec_interp = None
         return chem_interp, elec_interp

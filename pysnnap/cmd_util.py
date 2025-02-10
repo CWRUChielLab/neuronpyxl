@@ -95,7 +95,7 @@ def run_sim(name: str, file: str, step:float=-1., duration:float=10000., method:
         duration (float, optional): Duration of the simulations in ms. Defaults to 10000.
         method (int, optional): Method of integration. 1 for Backwards Euler and 2 for Crank-Nicholson. Defaults to 2.
         atol (float, optional): Absolute error tolerance of integration. Defaults to 1e-5.
-        interp (float, optional): Linear interpolate to constant size time step provided (in ms) (exclusive of 0 and inclusive of duration to match SNNAP's output). If not provided, will return the variable timestepped data. Defaults to -1.
+        interp (float, optional): Cubic spline interpolation to constant size time step provided (in ms). If not provided, will return the variable timestepped data. Defaults to -1.
         syn (bool, optional): If True, will record synaptic currents if they are available. Defaults to False.
         vonly (bool, optional): If True, will only record membrane potentials of each cell and the time. If both syn and vonly are True, will default to recording vonly. Defaults to False.
         noise (tuple, optional): Noise parameters for an Exponential Synapse noise model. noise[0] = rate (Hz), noise[1] = weight (nS), noise[2] = tau (ms). Defaults to None.
@@ -108,9 +108,7 @@ def run_sim(name: str, file: str, step:float=-1., duration:float=10000., method:
     assert 0 < atol < 1, f"atol={atol} is not a valid error tolerance. Must be between 0 and 1."
     
     # Set up and run simulation but setting object parameters to correct values
-    nb = network.NetworkBuilder(params_file=file, sim_name=name, noise=noise, dt=step)
-    nb.atol = atol
-    nb.integrator = method
+    nb = network.NetworkBuilder(params_file=file, sim_name=name, noise=noise, dt=step, atol=atol, integrator=method)
     nb.simdur = duration
     nb.eq_time = teq
     if syn and not vonly:
@@ -144,8 +142,7 @@ def run_sim(name: str, file: str, step:float=-1., duration:float=10000., method:
             pd.DataFrame(data).to_hdf(os.path.join(results_folder, f"{name}_data.h5"), key="data", mode='w')
             
     if interp > 0: # Interpolate data to provided timestep then save
-        # Define the time vector (this matches with SNNAP which doesn't include t=0)
-        tvec = np.arange(start=interp, stop=duration+interp, step=interp)
+        tvec = np.arange(start=0, stop=duration, step=interp)
         if not vonly: # If all currents and concentrations are recorded, then save each cell's data in its own .h5 file.
             for c in nb.cells.keys():
                 cell_data = nb.get_interpolated_cell_data(c, tvec)
