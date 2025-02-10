@@ -58,7 +58,7 @@ All possible arguments:
 - --step dt: optional argument to specify the timestep of the simulation. Defaults to variable timestepping (recommended)
 - --method num: optional argument to specify the integration method of the simulation. Method 1 is Backwards-Euler and method 2 is Crank-Nicholson. Defaults to 2.
 - --noise freq weight tau: optional argument to specify noise parameters to inject a noisy current into the cell via an exponential synapse (see ExpSyn NEURON documention). freq determines the frequency in Hz, the weight is the synaptic weight in nS, and tau is the time constant in ms.
-- --interp dt: optional argument. If provided, recorded data will be interpolated to the provided constant timestep dt.
+- --interp dt: optional argument. If provided, recorded data will be interpolated to the provided constant timestep dt via cubic spline interpolation.
 - --atol tol: optional argument to specify the absolute error tolernace of the integration. Defaults to 1e-5.
 - --syn: optional with no arguments. If provided, will record the currents from chemical and electrical synapses if available
 - --vonly: optional with no arguments. If provided, will record the membrane potentials and time from each cell only.
