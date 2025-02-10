@@ -36,7 +36,7 @@ from pysnnap import cell, reader
 from typing import Tuple
 
 class NetworkBuilder:
-    def __init__(self, params_file: str, sim_name: str, noise: tuple):
+    def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float):
         """_summary_
 
         Args:
@@ -73,7 +73,7 @@ class NetworkBuilder:
         
         self.prefix = "pysnnap_" # mod file
         # Simulation setup parameters
-        self.dt = -1
+        self.dt = dt
         self.integrator = 2 # can be 1 or 2 (1: Backwards Euler, 2: Crank-Nicholson)
         match self.integrator:
             case 1:

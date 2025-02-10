@@ -8,3 +8,6 @@ test*
 *.out
 sim_log.txt
 results.csv
+debug.py
+multirun_test.py
+*.png

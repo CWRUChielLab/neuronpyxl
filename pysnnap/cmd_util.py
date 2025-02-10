@@ -108,8 +108,7 @@ def run_sim(name: str, file: str, step:float=-1., duration:float=10000., method:
     assert 0 < atol < 1, f"atol={atol} is not a valid error tolerance. Must be between 0 and 1."
     
     # Set up and run simulation but setting object parameters to correct values
-    nb = network.NetworkBuilder(params_file=file, sim_name=name, noise=noise)
-    nb.dt = step
+    nb = network.NetworkBuilder(params_file=file, sim_name=name, noise=noise, dt=step)
     nb.atol = atol
     nb.integrator = method
     nb.simdur = duration
