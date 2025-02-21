@@ -155,11 +155,14 @@ class NetworkBuilder:
                     if "p" in r["vdg"].index:
                         current_mechs[key]["p"] = r["vdg"]["p"]
                     if not pd.isna(r["A"]).all(): # if there are no As, there aren't any Bs.
+                        if pd.isna(r["A"]["tmx"]):
+                                current_mechs[key][f"Ainfonly"] = 1
                         for param, val in r["A"].items():
                             if not pd.isna(val):
                                 current_mechs[key][f"{param}A"] = val
-                                if param == "tmx" and (r["A"]["ts1"] == 0 or pd.isna(r["A"]["ts1"])):
-                                        current_mechs[key][f"tmxAonly"] = 1 # catch case when A is not a differential equation
+                                if not "Ainfonly" in current_mechs[key]:
+                                    if param == "tmx" and (r["A"]["ts1"] == 0 or pd.isna(r["A"]["ts1"])):
+                                        current_mechs[key][f"tmxAonly"] = 1
                                         current_mechs[key][f"numataus"] = 1
                         if not pd.isna(r["A"]["ts1"]) and r["A"]["ts1"] != 0:
                             if pd.isna(r["A"]["ts2"]) or r["A"]["ts2"] == 0:
@@ -167,12 +170,15 @@ class NetworkBuilder:
                             else:
                                 current_mechs[key][f"numataus"] = 2
                         if not pd.isna(r["B"]).all():
+                            if pd.isna(r["B"]["tmx"]):
+                                    current_mechs[key][f"Binfonly"] = 1
                             for param, val in r["B"].items():
                                 if not pd.isna(val):
                                     current_mechs[key][f"{param}B"] = val
-                                    if param == "tmx" and (r["B"]["ts1"] == 0 or pd.isna(r["B"]["ts1"])):
-                                        current_mechs[key][f"tmxBonly"] = 1
-                                        current_mechs[key][f"numbtaus"] = 1
+                                    if not "Binfonly" in current_mechs[key]:
+                                        if param == "tmx" and (r["B"]["ts1"] == 0 or pd.isna(r["B"]["ts1"])):
+                                            current_mechs[key][f"tmxBonly"] = 1
+                                            current_mechs[key][f"numbtaus"] = 1
                             if not pd.isna(r["B"]["ts1"]) and r["B"]["ts1"] != 0:
                                 if pd.isna(r["B"]["ts2"]) or r["B"]["ts2"] == 0:
                                     current_mechs[key][f"numbtaus"] = 1
@@ -190,10 +196,14 @@ class NetworkBuilder:
             for mech, d in current_mechs.items():
                 for param, val in d.items():
                     setattr(c.section(0.5), f"{param}_{self.prefix}{mech}", val)
-                
+            
                     # print(f"{param}_{self.prefix}{mech} = {val}")
             # Add the cell to the network
             self.add_cell(c)
+            try:
+                print(c.section(0.5).pysnnap_kmain.Binfonly)
+            except:
+                pass
             print(f"Added {c} to the network.")
         
     

@@ -8,14 +8,14 @@ UNITS {
 
 NEURON {
     SUFFIX k
-    RANGE numbtaus, numataus, tmxAonly, tmxBonly, i, g, e, p, k1, k2, region, opt1, opt2, b, p1, p2, AnA, hA, sA, pA, tmxA, tminA, th1A, ts1A, tp1A, th2A, ts2A, tp2A, BnB, hB, sB, pB, tmxB, tminB, th1B, ts1B, tp1B, th2B, ts2B, tp2B
+    RANGE numbtaus, numataus, Ainfonly, Binfonly, tmxAonly, tmxBonly, i, g, e, p, k1, k2, region, opt1, opt2, b, p1, p2, AnA, hA, sA, pA, tmxA, tminA, th1A, ts1A, tp1A, th2A, ts2A, tp2A, BnB, hB, sB, pB, tmxB, tminB, th1B, ts1B, tp1B, th2B, ts2B, tp2B
 
 }
 
 PARAMETER {
     g (uS) e (mV) p ()
     AnA () BnB ()
-    numataus () numbtaus () tmxAonly = 0 () tmxBonly = 0 ()
+    numataus () numbtaus () tmxAonly = 0 () tmxBonly = 0 () Ainfonly = 0 () Binfonly = 0 ()
     region = -1
     k1 (1/s) k2 (nM/nA)
     opt1 () opt2 () p1 () p2 () b ()
@@ -70,9 +70,25 @@ FUNCTION current(numataus, numbtaus) (mA/cm2) {
     if (numataus == 0) {
         current = (100)*(g/area)*(v-e)
     } else if (numbtaus == 0) {
-        current = (100)*(g/area)*pow(A,p)*(v-e)
+        current = (100)*(g/area)*pow(Aactivation(),p)*(v-e)
     } else {
-        current = (100)*(g/area)*pow(A,p)*B*(v-e)
+        current = (100)*(g/area)*pow(Aactivation(),p)*Bactivation()*(v-e)
+    }
+}
+
+FUNCTION Aactivation() () {
+    if (Ainfonly == 1) {
+        Aactivation = Ainf()
+    } else {
+        Aactivation = A
+    }
+}
+
+FUNCTION Bactivation() () {
+    if (Binfonly == 1) {
+        Bactivation = Binf()
+    } else {
+        Bactivation = B
     }
 }
 
@@ -107,7 +123,9 @@ FUNCTION br(c) {
 }
 
 FUNCTION dA (numtaus) (/ms) {
-    if (numtaus == 1) {
+    if (Ainfonly == 1) {
+        dA = 0
+    } else if (numtaus == 1) {
         if (tmxAonly == 1) {
             dA = (Ainf()-A)/((1000)*tmxA)
         } else {
@@ -121,7 +139,9 @@ FUNCTION dA (numtaus) (/ms) {
 }
 
 FUNCTION dB (numtaus) (/ms) {
-    if (numtaus == 1) {
+    if (Binfonly == 1) {
+        dB = 0
+    } else if (numtaus == 1) {
         if (tmxBonly == 1) {
             dB = (Binf()-B)/((1000)*tmxB)
         } else {

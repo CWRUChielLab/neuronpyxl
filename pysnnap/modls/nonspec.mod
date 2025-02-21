@@ -8,7 +8,7 @@ UNITS {
 
 NEURON {
     SUFFIX nonspec
-    RANGE numbtaus, numataus, tmxAonly, tmxBonly, i, g, e, p, region, opt1, opt2, b, p1, p2, AnA, hA, sA, pA, tmxA, tminA, th1A, ts1A, tp1A, th2A, ts2A, tp2A, BnB, hB, sB, pB, tmxB, tminB, th1B, ts1B, tp1B, th2B, ts2B, tp2B
+    RANGE numbtaus, numataus, Ainfonly, Binfonly, tmxAonly, tmxBonly, i, g, e, p, region, opt1, opt2, b, p1, p2, AnA, hA, sA, pA, tmxA, tminA, th1A, ts1A, tp1A, th2A, ts2A, tp2A, BnB, hB, sB, pB, tmxB, tminB, th1B, ts1B, tp1B, th2B, ts2B, tp2B
     
     NONSPECIFIC_CURRENT i
 }
@@ -16,7 +16,7 @@ NEURON {
 PARAMETER {
     g (uS) e (mV) p ()
     AnA () BnB ()
-    numataus () numbtaus () tmxAonly = 0 () tmxBonly = 0 ()
+    numataus () numbtaus () tmxAonly = 0 () tmxBonly = 0 () Ainfonly = 0 () Binfonly = 0 ()
     region = -1
     opt1 () opt2 () p1 () p2 () b ()
     hA (mV) sA (mV) pA tmxA (s) tminA (s) th1A (mV) ts1A (mV) tp1A th2A (mV) ts2A (mV) tp2A
@@ -69,9 +69,25 @@ FUNCTION current(numataus, numbtaus) (mA/cm2) {
     if (numataus == 0) {
         current = (100)*(g/area)*(v-e)
     } else if (numbtaus == 0) {
-        current = (100)*(g/area)*pow(A,p)*(v-e)
+        current = (100)*(g/area)*pow(Aactivation(),p)*(v-e)
     } else {
-        current = (100)*(g/area)*pow(A,p)*B*(v-e)
+        current = (100)*(g/area)*pow(Aactivation(),p)*Bactivation()*(v-e)
+    }
+}
+
+FUNCTION Aactivation() () {
+    if (Ainfonly == 1) {
+        Aactivation = Ainf()
+    } else {
+        Aactivation = A
+    }
+}
+
+FUNCTION Bactivation() () {
+    if (Binfonly == 1) {
+        Bactivation = Binf()
+    } else {
+        Bactivation = B
     }
 }
 
@@ -106,53 +122,57 @@ FUNCTION br(c) {
 }
 
 FUNCTION dA (numtaus) (/ms) {
-    if (numtaus == 1) {
+    if (Ainfonly == 1) {
+        dA = 0
+    } else if (numtaus == 1) {
         if (tmxAonly == 1) {
-            dA = (Ainf(v)-A)/((1000)*tmxA)
+            dA = (Ainf()-A)/((1000)*tmxA)
         } else {
-            dA = (Ainf(v)-A)/tA_1tau(v, (1000)*tminA, (1000)*tmxA)
+            dA = (Ainf()-A)/tA_1tau((1000)*tminA, (1000)*tmxA)
         }
     } else if (numtaus == 2) {
-        dA = (Ainf(v)-A)/tA_2taus(v, (1000)*tminA, (1000)*tmxA)
+        dA = (Ainf()-A)/tA_2taus((1000)*tminA, (1000)*tmxA)
     } else {
         dA = 0
     }
 }
 
 FUNCTION dB (numtaus) (/ms) {
-    if (numtaus == 1) {
+    if (Binfonly == 1) {
+        dB = 0
+    } else if (numtaus == 1) {
         if (tmxBonly == 1) {
-            dB = (Binf(v)-B)/((1000)*tmxB)
+            dB = (Binf()-B)/((1000)*tmxB)
         } else {
-            dB = (Binf(v)-B)/tB_1tau(v, (1000)*tminB, (1000)*tmxB)
+            dB = (Binf()-B)/tB_1tau((1000)*tminB, (1000)*tmxB)
         }
     } else if (numtaus == 2) {
-        dB = (Binf(v)-B)/tB_2taus(v, (1000)*tminB, (1000)*tmxB)
+        dB = (Binf()-B)/tB_2taus((1000)*tminB, (1000)*tmxB)
     } else {
         dB = 0
     }
 }
 
-FUNCTION Ainf(v) () {
+FUNCTION Ainf() () {
     Ainf = 1/pow((1+exp((hA-v)/sA)), pA)
 }
 
-FUNCTION Binf(v) () {
+FUNCTION Binf() () {
     Binf = 1/pow((1+exp((v-hB)/sB)), pB)
 }
 
-FUNCTION tA_1tau(v, tmin, tmax) (ms) {
+FUNCTION tA_1tau(tmin, tmax) (ms) {
     tA_1tau = tmin+(tmax-tmin)/pow((1+exp((v-th1A)/ts1A)), tp1A)
 }
-FUNCTION tA_2taus(v, tmin, tmax) (ms) {
+FUNCTION tA_2taus(tmin, tmax) (ms) {
     tA_2taus = tmin+(tmax-tmin)/pow((1+exp((v-th1A)/ts1A)), tp1A)/pow((1+exp((v-th2A)/ts2A)), tp2A)
 }
 
-FUNCTION tB_1tau(v, tmin, tmax) (ms) {
+FUNCTION tB_1tau(tmin, tmax) (ms) {
     tB_1tau = tmin+(tmax-tmin)/pow((1+exp((v-th1B)/ts1B)), tp1B)
 }
 
-FUNCTION tB_2taus(v, tmin, tmax) (ms) {
+FUNCTION tB_2taus(tmin, tmax) (ms) {
     tB_2taus = tmin+(tmax-tmin)/pow((1+exp((v-th1B)/ts1B)), tp1B)/pow((1+exp((v-th2B)/ts2B)), tp2B)
 }
 
