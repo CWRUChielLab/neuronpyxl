@@ -37,7 +37,7 @@ from pysnnap import cell, reader
 from typing import Tuple
 
 class NetworkBuilder:
-    def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float):
+    def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float, eq_time: float):
         """_summary_
 
         Args:
@@ -84,7 +84,7 @@ class NetworkBuilder:
         self.atol = atol
         self.interp = 0.005
         self.v0 = {}
-        self.eq_time = 1000
+        self.eq_time = eq_time
         self.simdur = 10000
         self.temp = 6.3
         self.record_synaptic_currents = False
@@ -513,6 +513,7 @@ class NetworkBuilder:
             self.current_clamps[name][loc].append(ic)
         else:
             self.current_clamps[name][loc] = [ic]
+        return ic
             
             
     def attach_vclamp(self, name: str, loc=0.5, dur=100.0, amp=1.0, r=1.0, i=1.0):
@@ -564,6 +565,7 @@ class NetworkBuilder:
         for name, cell in self.cells.items():
             cell.recording = {0.5: {"V": h.Vector().record(cell.section(0.5)._ref_v)}}
             self.recording[name] = cell.recording
+            # self.record_iclamps(0.5)
             self.recording[name]["clamps"] = {"I": {0.5: {}}, "V": {0.5: {}}}
             if name in self.current_clamps:
                 for loc, clamp_list in self.current_clamps[name].items():
@@ -608,7 +610,6 @@ class NetworkBuilder:
                 cell.recording[0.5]["noise1"] = h.Vector().record(self.noise_cons[name][0]["syn"]._ref_i)
                 cell.recording[0.5]["noise2"] = h.Vector().record(self.noise_cons[name][1]["syn"]._ref_i)
             self.recording[name] = cell.recording
-            self.recording[name]["clamps"] = {"I": {}, "V": {}}
             if name in self.current_clamps:
                 for loc, clamp_list in self.current_clamps[name].items():
                     self.recording[name]["clamps"]["I"][loc] = []
@@ -632,6 +633,7 @@ class NetworkBuilder:
                 for post, syn in d.items():
                     self.synaptic_currents_recording["electrical"][f"{pre}_2_{post}"] = h.Vector().record(syn._ref_i)
             self.synaptic_currents_recording["t"] = h.Vector().record(h._ref_t)
+        self.record_iclamps(loc)
     
     
     def record(self, voltage_only: bool, all_locs: bool, at_locs: list):
@@ -645,12 +647,8 @@ class NetworkBuilder:
         """_summary_
         """
         print("Equilibrating...")
-        if self.dt > 0:
-            h.cvode.active(False)
-            h.dt = self.dt
-        else:
-            h.cvode.active(True)
-            h.cvode.atol(self.atol)
+        h.cvode.active(True)
+        h.cvode.atol(self.atol)
         h.celsius = self.temp
         h.secondorder = self.secondorder
         for name, c in self.cells.items():
@@ -669,14 +667,9 @@ class NetworkBuilder:
             at_locs (List[float], optional): Provide the locations on the segment to record in every cell. Will error if a location is not on the segment. Defaults to [0.5].
             all_locs (boolean, optional): If true, will record data at every location in the segment in every cell and ignores at_locs argument. Defaults to False.
         """ 
-        if self.ran_before:
-            # self.reset_recordings()
-            self.equilibrate()
-            self.add_iclamps_from_reader()
-            h.frecord_init()
-            h.cvode.re_init()
-        else:
-            self.record(voltage_only, all_locs=all_locs, at_locs=at_locs)
+        if self.dt > 0:
+            h.dt = self.dt
+        self.record(voltage_only, all_locs=all_locs, at_locs=at_locs)
         print("Running simulation...")
         start_time = time.time()
         h.continuerun(self.simdur)
@@ -686,10 +679,7 @@ class NetworkBuilder:
 
      
     def reset_recordings(self):
-        """Function to resize all records to 0 while maintaining their object locations.
-        Useful for running multiple simulations in a row with different parameters.
-        Automatically called in self.run.
-        Might be obsolete?
+        """Deprecated
         """
         self.recording["t"].resize(0)
         if self.record_synaptic_currents:

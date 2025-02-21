@@ -188,7 +188,7 @@ class Cell:
 
 
     def reset_recordings(self):
-        """_summary_
+        """Deprecated
         """
         def resize_recordings(d):
             for v in d.values():
