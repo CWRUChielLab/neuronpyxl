@@ -196,14 +196,8 @@ class NetworkBuilder:
             for mech, d in current_mechs.items():
                 for param, val in d.items():
                     setattr(c.section(0.5), f"{param}_{self.prefix}{mech}", val)
-            
-                    # print(f"{param}_{self.prefix}{mech} = {val}")
             # Add the cell to the network
             self.add_cell(c)
-            try:
-                print(c.section(0.5).pysnnap_kmain.Binfonly)
-            except:
-                pass
             print(f"Added {c} to the network.")
         
     

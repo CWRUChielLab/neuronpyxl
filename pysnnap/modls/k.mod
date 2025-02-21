@@ -8,7 +8,7 @@ UNITS {
 
 NEURON {
     SUFFIX k
-    RANGE numbtaus, numataus, Ainfonly, Binfonly, tmxAonly, tmxBonly, i, g, e, p, k1, k2, region, opt1, opt2, b, p1, p2, AnA, hA, sA, pA, tmxA, tminA, th1A, ts1A, tp1A, th2A, ts2A, tp2A, BnB, hB, sB, pB, tmxB, tminB, th1B, ts1B, tp1B, th2B, ts2B, tp2B
+    RANGE numbtaus, numataus, A, B, Ainfonly, Binfonly, tmxAonly, tmxBonly, i, g, e, p, k1, k2, region, opt1, opt2, b, p1, p2, AnA, hA, sA, pA, tmxA, tminA, th1A, ts1A, tp1A, th2A, ts2A, tp2A, BnB, hB, sB, pB, tmxB, tminB, th1B, ts1B, tp1B, th2B, ts2B, tp2B
 
 }
 
@@ -25,16 +25,16 @@ PARAMETER {
 }
 
 ASSIGNED {
-    C (mM) ik (mA/cm2) i (mA/cm2) v (mV) area (um2) nai (mM) ki (mM) cli (mM) cai (mM) dki (mM/ms) dBR (/ms)
+    C (mM) ik (mA/cm2) i (mA/cm2) v (mV) area (um2) nai (mM) ki (mM) cli (mM) cai (mM) dki (mM/ms) dBR (/ms) A () B ()
 }
 
 STATE {
-    A () B () BR ()
+    Astate () Bstate () BR ()
 }
 
 INITIAL {
-    A = AnA
-    B = BnB
+    Astate = AnA
+    Bstate = BnB
     BR = 0.0
 }
 
@@ -56,13 +56,15 @@ BREAKPOINT {
         dBR = 0
     }
     SOLVE states METHOD derivimplicit
+    A = A_func(v)
+    B = B_func(v)
     i = current(numataus, numbtaus)*fbr(br(C))
     ik = i
 }
 
 DERIVATIVE states {
-    A' = dA(numataus)
-    B' = dB(numbtaus)
+    Astate' = dA(numataus)
+    Bstate' = dB(numbtaus)
     BR' = dBR
 }
 
@@ -70,25 +72,25 @@ FUNCTION current(numataus, numbtaus) (mA/cm2) {
     if (numataus == 0) {
         current = (100)*(g/area)*(v-e)
     } else if (numbtaus == 0) {
-        current = (100)*(g/area)*pow(Aactivation(),p)*(v-e)
+        current = (100)*(g/area)*pow(A,p)*(v-e)
     } else {
-        current = (100)*(g/area)*pow(Aactivation(),p)*Bactivation()*(v-e)
+        current = (100)*(g/area)*pow(A,p)*B*(v-e)
     }
 }
 
-FUNCTION Aactivation() () {
+FUNCTION A_func(v) () {
     if (Ainfonly == 1) {
-        Aactivation = Ainf()
+        A_func = Ainf(v)
     } else {
-        Aactivation = A
+        A_func = Astate
     }
 }
 
-FUNCTION Bactivation() () {
+FUNCTION B_func(v) () {
     if (Binfonly == 1) {
-        Bactivation = Binf()
+        B_func = Binf(v)
     } else {
-        Bactivation = B
+        B_func = Bstate
     }
 }
 
@@ -127,12 +129,12 @@ FUNCTION dA (numtaus) (/ms) {
         dA = 0
     } else if (numtaus == 1) {
         if (tmxAonly == 1) {
-            dA = (Ainf()-A)/((1000)*tmxA)
+            dA = (Ainf(v)-A)/((1000)*tmxA)
         } else {
-            dA = (Ainf()-A)/tA_1tau((1000)*tminA, (1000)*tmxA)
+            dA = (Ainf(v)-A)/tA_1tau((1000)*tminA, (1000)*tmxA)
         }
     } else if (numtaus == 2) {
-        dA = (Ainf()-A)/tA_2taus((1000)*tminA, (1000)*tmxA)
+        dA = (Ainf(v)-A)/tA_2taus((1000)*tminA, (1000)*tmxA)
     } else {
         dA = 0
     }
@@ -143,22 +145,22 @@ FUNCTION dB (numtaus) (/ms) {
         dB = 0
     } else if (numtaus == 1) {
         if (tmxBonly == 1) {
-            dB = (Binf()-B)/((1000)*tmxB)
+            dB = (Binf(v)-B)/((1000)*tmxB)
         } else {
-            dB = (Binf()-B)/tB_1tau((1000)*tminB, (1000)*tmxB)
+            dB = (Binf(v)-B)/tB_1tau((1000)*tminB, (1000)*tmxB)
         }
     } else if (numtaus == 2) {
-        dB = (Binf()-B)/tB_2taus((1000)*tminB, (1000)*tmxB)
+        dB = (Binf(v)-B)/tB_2taus((1000)*tminB, (1000)*tmxB)
     } else {
         dB = 0
     }
 }
 
-FUNCTION Ainf() () {
+FUNCTION Ainf(v) () {
     Ainf = 1/pow((1+exp((hA-v)/sA)), pA)
 }
 
-FUNCTION Binf() () {
+FUNCTION Binf(v) () {
     Binf = 1/pow((1+exp((v-hB)/sB)), pB)
 }
 
