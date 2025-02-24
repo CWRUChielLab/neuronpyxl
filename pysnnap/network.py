@@ -614,6 +614,7 @@ class NetworkBuilder:
                 cell.recording[0.5]["noise1"] = h.Vector().record(self.noise_cons[name][0]["syn"]._ref_i)
                 cell.recording[0.5]["noise2"] = h.Vector().record(self.noise_cons[name][1]["syn"]._ref_i)
             self.recording[name] = cell.recording
+            self.recording[name]["clamps"] = {"I": {0.5: []}, "V": {0.5: []}}
             if name in self.current_clamps:
                 for loc, clamp_list in self.current_clamps[name].items():
                     self.recording[name]["clamps"]["I"][loc] = []
@@ -637,7 +638,6 @@ class NetworkBuilder:
                 for post, syn in d.items():
                     self.synaptic_currents_recording["electrical"][f"{pre}_2_{post}"] = h.Vector().record(syn._ref_i)
             self.synaptic_currents_recording["t"] = h.Vector().record(h._ref_t)
-        self.record_iclamps(loc)
     
     
     def record(self, voltage_only: bool, all_locs: bool, at_locs: list):
