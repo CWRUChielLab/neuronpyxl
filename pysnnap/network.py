@@ -673,7 +673,10 @@ class NetworkBuilder:
         """ 
         if self.dt > 0:
             h.dt = self.dt
-        self.record(voltage_only, all_locs=all_locs, at_locs=at_locs)
+        elif self.ran_before:
+                h.cvode.re_init()
+        if not self.ran_before:
+            self.record(voltage_only, all_locs=all_locs, at_locs=at_locs) 
         print("Running simulation...")
         start_time = time.time()
         h.continuerun(self.simdur)
