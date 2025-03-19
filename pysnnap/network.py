@@ -451,6 +451,53 @@ class NetworkBuilder:
         # self.compute_input_resistance()
         e1 = 60
         e2 = -90
+        rate = self.noise["rate"] / 1000 # 1 / ms
+        
+        def gen_spike_times(rate, simdur): # simdur in ms, rate in 1/ms.
+            num_spikes = np.random.poisson(rate * simdur)
+            isi = np.random.exponential(1 / rate, num_spikes)
+            spike_times = np.cumsum(isi)
+            return spike_times[spike_times < simdur]
+        
+        for name, cell in self.cells.items():
+            e0 = cell.section(0.5).v
+            
+            n1 = gen_spike_times(rate/1000, self.simdur)
+            n2 = gen_spike_times(rate/1000, self.simdur)
+
+            vs1 = h.VecStim()
+            vec1 = h.Vector(n1)
+            vs1.play(vec1)
+
+            vs2 = h.VecStim()
+            vec2 = h.Vector(n2)
+            vs2.play(vec2)
+
+            syn1 = h.ExpSyn(cell.section(0.5))
+            syn1.tau = self.noise["tau"]
+            syn1.e = e1
+            
+            syn2 = h.ExpSyn(cell.section(0.5))
+            syn2.tau = self.noise["tau"]
+            syn2.e = e2
+            
+            # Connect the NetStim to the synapse via a NetCon
+            nc1 = h.NetCon(vs1, syn1)
+            nc1.weight[0] = np.abs((e2 - e0) / (e1 - e0)) * self.noise["scale"]  # Synaptic weight in μS
+            nc2 = h.NetCon(vs2, syn2)
+            nc2.weight[0] = self.noise["scale"] # Synaptic weight in μS
+            self.noise_cons[name] = (
+                {"vecstim": vs1, "syn": syn1, "netcon": nc1},
+                {"vecstim": vs2, "syn": syn2, "netcon": nc2}
+            )
+        h.finitialize()
+        h.continuerun(1000)
+    
+    
+    def add_noise_old(self):
+        # self.compute_input_resistance()
+        e1 = 60
+        e2 = -90
         for name, cell in self.cells.items():
             e0 = cell.section(0.5).v
             ns1 = h.NetStim()

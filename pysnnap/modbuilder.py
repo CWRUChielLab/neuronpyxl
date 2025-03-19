@@ -59,6 +59,7 @@ class ModBuilder:
         self.clear_dir("./mod", cluster) # clear out the mod directory
         shutil.copy(self.modls_path.joinpath("cs.mod"), self.mod_path) # Copies cs.mod and es.mod whether or not they are specified in the spreadsheet.
         shutil.copy(self.modls_path.joinpath("es.mod"), self.mod_path)
+        shutil.copy(self.modls_path.joinpath("vecevent.mod"), self.mod_path)
         self.gen_mech_mods() # generate current mechanism mod files
         self.gen_pool_mods() # generate ion pool mod files
             
