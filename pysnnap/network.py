@@ -39,7 +39,7 @@ from typing import Tuple
 import warnings
 
 class NetworkBuilder:
-    def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float, eq_time: float):
+    def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float, eq_time: float, simdur:float):
         """_summary_
 
         Args:
@@ -88,7 +88,7 @@ class NetworkBuilder:
         self.interp = 0.005
         self.v0 = {}
         self.eq_time = eq_time
-        self.simdur = 10000
+        self.simdur = simdur
         self.temp = 6.3
         self.record_synaptic_currents = False
         self.sim_name = sim_name
@@ -452,6 +452,8 @@ class NetworkBuilder:
         e1 = 60
         e2 = -90
         rate = self.noise["rate"] / 1000 # 1 / ms
+        noise_eqtime = 1000
+        # h.t = -noise_eqtime
         
         def gen_spike_times(rate, simdur): # simdur in ms, rate in 1/ms.
             num_spikes = np.random.poisson(rate * simdur)
@@ -462,8 +464,8 @@ class NetworkBuilder:
         for name, cell in self.cells.items():
             e0 = cell.section(0.5).v
             
-            n1 = gen_spike_times(rate/1000, self.simdur)
-            n2 = gen_spike_times(rate/1000, self.simdur)
+            n1 = gen_spike_times(rate, self.simdur)
+            n2 = gen_spike_times(rate, self.simdur)
 
             vs1 = h.VecStim()
             vec1 = h.Vector(n1)
@@ -490,48 +492,6 @@ class NetworkBuilder:
                 {"vecstim": vs1, "syn": syn1, "netcon": nc1},
                 {"vecstim": vs2, "syn": syn2, "netcon": nc2}
             )
-        h.finitialize()
-        h.continuerun(1000)
-    
-    
-    def add_noise_old(self):
-        # self.compute_input_resistance()
-        e1 = 60
-        e2 = -90
-        for name, cell in self.cells.items():
-            e0 = cell.section(0.5).v
-            ns1 = h.NetStim()
-            ns1.start = 0
-            ns1.number = 1e9
-            ns1.interval = 1000 / self.noise["rate"] # Time between spikes in ms
-            ns1.noise = 1.0   # 1 for fully Poisson process
-            
-            ns2 = h.NetStim()
-            ns2.start = 0
-            ns2.number = 1e9
-            ns2.interval = 1000 / self.noise["rate"] # Time between spikes in ms
-            ns2.noise = 1.0   # 1 for fully Poisson process
-            
-            syn1 = h.ExpSyn(cell.section(0.5))
-            syn1.tau = self.noise["tau"]
-            syn1.e = e1
-            
-            syn2 = h.ExpSyn(cell.section(0.5))
-            syn2.tau = self.noise["tau"]
-            syn2.e = e2
-            
-            # Rinp = self.input_resistance[name]
-            # Connect the NetStim to the synapse via a NetCon
-            nc1 = h.NetCon(ns1, syn1)
-            nc1.weight[0] = np.abs((e2 - e0) / (e1 - e0)) * self.noise["scale"]  # Synaptic weight in μS
-            nc2 = h.NetCon(ns2, syn2)
-            nc2.weight[0] = self.noise["scale"] # Synaptic weight in μS
-            self.noise_cons[name] = (
-                {"netstim": ns1, "syn": syn1, "netcon": nc1},
-                {"netstim": ns2, "syn": syn2, "netcon": nc2}
-            )
-        h.finitialize()
-        h.continuerun(1000)
     
     
     def add_cell(self, cell: cell.Cell):
@@ -711,6 +671,7 @@ class NetworkBuilder:
         h.cvode.atol(self.atol)
         h.celsius = self.temp
         h.secondorder = self.secondorder
+        h.t = -self.eq_time
         for name, c in self.cells.items():
             for seg in c.section:
                 seg.v = self.v0[name]
@@ -727,14 +688,16 @@ class NetworkBuilder:
             at_locs (List[float], optional): Provide the locations on the segment to record in every cell. Will error if a location is not on the segment. Defaults to [0.5].
             all_locs (boolean, optional): If true, will record data at every location in the segment in every cell and ignores at_locs argument. Defaults to False.
         """ 
+        # self.equilibrate()
         if self.dt > 0:
             h.dt = self.dt
-        elif self.ran_before:
-            h.cvode.re_init()
+        # elif self.ran_before:
+        #     h.cvode.re_init()
         if not self.ran_before:
             self.record(voltage_only, all_locs=all_locs, at_locs=at_locs) 
         print("Running simulation...")
         start_time = time.time()
+        h.finitialize()
         h.continuerun(self.simdur)
         end_time = time.time()
         self.simtime = end_time - start_time
