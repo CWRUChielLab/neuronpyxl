@@ -2,10 +2,10 @@
 This file is part of pySNNAP.
 
 The ModBuilder class is necessary for running SNNAP-like simulations. It uses the stencil files located
-in /modls/ to generate the mod files. There will be 1 mod file for each ion channel, and it will use the 
+in pysnnap/modls/ to generate the mod files. There will be 1 mod file for each ion channel, and it will use the 
 correct ion in that channel if notated properly (name of the ion channel has to start with either Cl, Ca, K, or Na,
 not case-sensitive). These files detail the equations that can be used within the simulation, the parameters
-of which are set in the NetworkBuilder class.
+of which are set in the NetworkBuilder class. Will use a nonspecific ion if it doesn not begin with one of those ions.
 
 Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
@@ -56,7 +56,7 @@ class ModBuilder:
     def run(self, cluster: bool = False):
         """Function to generate all of the mod files.
         """
-        self.clear_dir("./mod", cluster)
+        self.clear_dir("./mod", cluster) # clear out the mod directory
         shutil.copy(self.modls_path.joinpath("cs.mod"), self.mod_path) # Copies cs.mod and es.mod whether or not they are specified in the spreadsheet.
         shutil.copy(self.modls_path.joinpath("es.mod"), self.mod_path)
         self.gen_mech_mods() # generate current mechanism mod files
@@ -126,10 +126,12 @@ class ModBuilder:
 
 
     def clear_dir(self, dir_path: str, cluster:bool = False):
-        """Function to clear a directory or create a new one if one doesn't exist. If dir_path does exist, prompts the user if it is okay to clear that directory.
+        """Function to clear a directory or create a new one if one doesn't exist.
+        If dir_path does exist, prompts the user if it is okay to clear that directory unless cluster == True.
 
         Args:
-            dir_path (str): _description_
+            dir_path (str): path to clear out
+            cluster (bool): (for running on HPC) if cluster == True, does not prompt the user to clear contents of file.
         """
         if os.path.exists(dir_path):
             # Directory exists, empty it
@@ -148,7 +150,7 @@ class ModBuilder:
     
     def gen_mech_mods(self):
         """Generates the mod files for the ion current mechanisms.
-        Don't change this.
+        Don't change this please.
         """
         def copy_and_modify_file(input_file: str, output_file: str, line_number: int, new_value: str) -> None:
             """Helper function for gen_mech_mods. Copies and modifies the input file. Replaces the line at line_number with the new_value.

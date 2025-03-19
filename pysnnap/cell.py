@@ -50,6 +50,7 @@ class Cell:
         # Geometry
         self.section.L = L
         self.section.diam = diam
+        # Not really sure that this is necessary because there is no compartment-based modeling in SNNAP, but it's here if this should be incorporated in the future.
         self.section.nseg = int((L/(0.1*h.lambda_f(100, self.section))+.999)/2)*2 + 1 # d_lambda rule, see NEURON docs
         self.area = {seg.x: self.section(seg.x).area()*1e-8 for seg in self.section} # maps area of cell at each location available in the cell. 0.5 is always a location in the cell
         
@@ -61,7 +62,7 @@ class Cell:
         self.current_mechs = current_mechs
         if len(self.current_mechs) > 0:
             self.load_mechanisms(self.current_mechs)
-        self.other_mechs = other_mechs
+        self.other_mechs = other_mechs # Pretty sure this is deprecated.
         if len(other_mechs) > 0:
             self.load_mechanisms(self.other_mechs)
         
@@ -69,7 +70,7 @@ class Cell:
     
     
     def __repr__(self) -> str:
-        """_summary_
+        """Representation of the cell includes its id and name.
 
         Returns:
             str: _description_
@@ -92,16 +93,16 @@ class Cell:
             
             
     def iclamp(self, delay: float, dur: float, amp: float, loc=0.5):
-        """_summary_
+        """Creates an iclamp given the parameters in neuron.
 
         Args:
-            delay (float): _description_
-            dur (float): _description_
-            amp (float): _description_
-            loc (float, optional): _description_. Defaults to 0.5.
+            delay (float): when IClamp starts injecting current.
+            dur (float): how long to inject current.
+            amp (float): how much current (nA)
+            loc (float, optional): Location in the cell. Defaults to 0.5.
 
         Returns:
-            _type_: _description_
+            h.IClamp: the IClamp
         """
         ic = h.IClamp(self.section(loc))
         if delay is not None:
@@ -123,23 +124,49 @@ class Cell:
 
 
     def get_attribute(self, loc: float, mech: str, attr: str) -> any:
+        """Gets an attribute from this Cell.
+
+        Args:
+            loc (float): location in cell
+            mech (str): mechanism to access (e.g. Ka, Napp, HCN)
+            attr (str): attribute of interest (e.g. g, e, th1, tmaxA) (see RANGE variables in mod files for all attributes)
+
+        Returns:
+            any: the value of the attribute
+        """
         return getattr(self.section(loc), f"{attr}_{mech}")
     
     
     def get_reference(self, loc: float, attr: str) -> any:
+        """Get the reference (hoc object/pointer) of the mechanism provided
+
+        Args:
+            loc (float): location in cell
+            attr (str): attribute of to get
+
+        Returns:
+            any: Hoc object or pointer
+        """
         return getattr(self.section(loc), f"_ref_{attr}")
     
     
     def set_attribute(self, loc: float, attr: str, val: float):
+        """Set the value of an attribute
+
+        Args:
+            loc (float): location in cell
+            attr (str): attribute (e.g. g_pysnnap_na) (see mod files)
+            val (float): value to set it to
+        """
         setattr(self.section(loc), attr, val)
 
 
-    def current_density_to_nA(self, ivec: iter, loc=0.5) -> iter:
-        """_summary_
+    def current_density_to_nA(self, ivec, loc=0.5) -> iter:
+        """Unit conversion helper function to convert distributed currents to absolute units.
 
         Args:
-            ivec (iter): _description_
-            loc (float, optional): _description_. Defaults to 0.5.
+            ivec (): distributed current vector
+            loc (float, optional): Location in the cell. Defaults to 0.5.
 
         Returns:
             iter: _description_
@@ -147,11 +174,11 @@ class Cell:
         return ivec*self.area[loc]*1e6
 
 
-    def set_iv_recording(self, loc: float):
-        """_summary_
+    def set_iv_recording(self, loc:float=0.5):
+        """Set up recording of currents and voltage in the cell.
 
         Args:
-            loc (float): _description_
+            loc (float): location in the cell to record at. Defaults to 0.5.
         """
         self.recording[loc] = {}
         self.recording[loc]["V"] = h.Vector().record(self.section(loc)._ref_v) # record potential
@@ -167,13 +194,13 @@ class Cell:
     
     
     def get_data(self, loc=0.5) -> dict:
-        """_summary_
+        """Recursively get data from the recording dictionary. Used by the NetworkBuilder.
 
         Args:
-            loc (float, optional): _description_. Defaults to 0.5.
+            loc (float, optional): Location in cell. Defaults to 0.5.
 
         Returns:
-            dict: _description_
+            dict: Dictionary with all of the recordings. Direct key-val mapping depth of 1.
         """
         def flatten_dict(d, parent_key='', sep='_'):
             items = {}
@@ -188,7 +215,7 @@ class Cell:
 
 
     def reset_recordings(self):
-        """Deprecated
+        """Deprecated.
         """
         def resize_recordings(d):
             for v in d.values():

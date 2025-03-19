@@ -32,9 +32,11 @@ import sys
 import os
 import platform
 import time
+# import random
 from scipy.interpolate import CubicSpline
 from pysnnap import cell, reader
 from typing import Tuple
+import warnings
 
 class NetworkBuilder:
     def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float, eq_time: float):
@@ -59,7 +61,8 @@ class NetworkBuilder:
         self.chemical_synapses = {"fast": {}, "slow": {}} # Dict[synapse type -> Dict[presynaptic cell name -> Dict[postsynaptic cell name -> Dict["synapse" -> PointProcess, "netcon" -> NetCon]]]]
         self.input_resistance = {} # stores input resistances
         if noise is not None:
-            self.noise = {"rate": noise[0], "weight": noise[1], "tau": noise[2]}
+            self.noise = {"rate": noise[0], "scale": noise[1], "tau": noise[2]}
+            # self.noise = {"std": noise[0], "rate": noise[1]}
         else:
             self.noise = None
         self.noise_cons = {}
@@ -112,9 +115,10 @@ class NetworkBuilder:
         self.add_synapses_from_reader()
         self.set_up_v0_from_reader()
         self.equilibrate()
-        self.add_iclamps_from_reader()
         if self.noise is not None:
             self.add_noise()
+        self.add_iclamps_from_reader()
+        # print(self.noise_objs["B4"]["vec"].as_numpy())
     
     
     def add_cells_from_reader(self):
@@ -156,7 +160,7 @@ class NetworkBuilder:
                         current_mechs[key]["p"] = r["vdg"]["p"]
                     if not pd.isna(r["A"]).all(): # if there are no As, there aren't any Bs.
                         if pd.isna(r["A"]["tmx"]):
-                                current_mechs[key][f"Ainfonly"] = 1
+                            current_mechs[key][f"Ainfonly"] = 1
                         for param, val in r["A"].items():
                             if not pd.isna(val):
                                 current_mechs[key][f"{param}A"] = val
@@ -171,7 +175,7 @@ class NetworkBuilder:
                                 current_mechs[key][f"numataus"] = 2
                         if not pd.isna(r["B"]).all():
                             if pd.isna(r["B"]["tmx"]):
-                                    current_mechs[key][f"Binfonly"] = 1
+                                current_mechs[key][f"Binfonly"] = 1
                             for param, val in r["B"].items():
                                 if not pd.isna(val):
                                     current_mechs[key][f"{param}B"] = val
@@ -444,9 +448,11 @@ class NetworkBuilder:
     
     
     def add_noise(self):
-        self.compute_input_resistance()
+        # self.compute_input_resistance()
+        e1 = 60
+        e2 = -90
         for name, cell in self.cells.items():
-            e0 = self.v0[name]
+            e0 = cell.section(0.5).v
             ns1 = h.NetStim()
             ns1.start = 0
             ns1.number = 1e9
@@ -461,20 +467,24 @@ class NetworkBuilder:
             
             syn1 = h.ExpSyn(cell.section(0.5))
             syn1.tau = self.noise["tau"]
-            syn1.e = 0
+            syn1.e = e1
             
             syn2 = h.ExpSyn(cell.section(0.5))
             syn2.tau = self.noise["tau"]
-            syn2.e = 2*e0
+            syn2.e = e2
             
-            Rin = self.input_resistance[name]
+            # Rinp = self.input_resistance[name]
             # Connect the NetStim to the synapse via a NetCon
             nc1 = h.NetCon(ns1, syn1)
-            nc1.weight[0] = self.noise["weight"] / Rin # Synaptic weight in μS
-            
+            nc1.weight[0] = np.abs((e2 - e0) / (e1 - e0)) * self.noise["scale"]  # Synaptic weight in μS
             nc2 = h.NetCon(ns2, syn2)
-            nc2.weight[0] = self.noise["weight"] / Rin # Synaptic weight in μS
-            self.noise_cons.setdefault(name, ({"netstim": ns1, "syn": syn1, "netcon": nc1}, {"netstim": ns2, "syn": syn2, "netcon": nc2}))
+            nc2.weight[0] = self.noise["scale"] # Synaptic weight in μS
+            self.noise_cons[name] = (
+                {"netstim": ns1, "syn": syn1, "netcon": nc1},
+                {"netstim": ns2, "syn": syn2, "netcon": nc2}
+            )
+        h.finitialize()
+        h.continuerun(1000)
     
     
     def add_cell(self, cell: cell.Cell):
@@ -592,7 +602,6 @@ class NetworkBuilder:
             all_locs (bool, optional): If true, ignores at_locs argument. Defaults to False.
             at_locs (list, optional): _description_. Defaults to [0.5].
         """
-        gc.collect()
         self.recording["t"] = h.Vector().record(h._ref_t)
         if all_locs:
             locs = [seg.x for seg in cell.section]
@@ -674,7 +683,7 @@ class NetworkBuilder:
         if self.dt > 0:
             h.dt = self.dt
         elif self.ran_before:
-                h.cvode.re_init()
+            h.cvode.re_init()
         if not self.ran_before:
             self.record(voltage_only, all_locs=all_locs, at_locs=at_locs) 
         print("Running simulation...")
@@ -688,6 +697,7 @@ class NetworkBuilder:
     def reset_recordings(self):
         """Deprecated
         """
+        warnings.warn("Warning: using reset_recordings is deprecated. Use h.frecord_init() or h.cvode.re_init() instead (I think?)")
         self.recording["t"].resize(0)
         if self.record_synaptic_currents:
             def resize_recording(d):
@@ -762,7 +772,7 @@ class NetworkBuilder:
         for clamp_type, clamp_recording in self.recording[name]["clamps"].items():
             if loc in clamp_recording:
                 if len(clamp_recording[loc]) > 0:
-                    cell_data[f"{clamp_type}_applied_{loc}"] = np.sum(clamp_recording[loc], axis=0)
+                    cell_data[f"{clamp_type}_applied_{loc}"] = np.sum([r.as_numpy() for r in clamp_recording[loc]], axis=0)
         adjust_t = 0
         if self.dt > 0:
             if self.secondorder == 1:
@@ -874,7 +884,8 @@ class NetworkBuilder:
             metadata["Data saved to"] = f"./Data/{self.sim_name}_data/{self.sim_name}_data.h5"
         
         if self.noise is not None:
-            metadata["Noise"] = f"rate = {self.noise['rate']} Hz, synaptic weight = {self.noise['weight']} nS, tau = {self.noise['tau']} ms"
+            metadata["Noise"] = f"rate = {self.noise['rate']} Hz, scale = {self.noise['scale']} uS, tau = {self.noise['tau']} ms"
+            # metadata["Noise"] = f"rate = {self.noise['rate']} Hz, stddev = {self.noise['std']} ms"
         
         with open(os.path.join(self.cwd, f"Data/{self.sim_name}_data/info.txt"), 'w') as f:
             for key, value in metadata.items():
