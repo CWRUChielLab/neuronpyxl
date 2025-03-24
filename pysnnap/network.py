@@ -88,6 +88,7 @@ class NetworkBuilder:
         self.interp = 0.005
         self.v0 = {}
         self.eq_time = eq_time
+        self.noise_eq_time = 1000
         self.simdur = simdur
         self.temp = 6.3
         self.record_synaptic_currents = False
@@ -114,11 +115,9 @@ class NetworkBuilder:
         self.add_regulation_from_reader()
         self.add_synapses_from_reader()
         self.set_up_v0_from_reader()
-        self.equilibrate()
         if self.noise is not None:
             self.add_noise()
         self.add_iclamps_from_reader()
-        # print(self.noise_objs["B4"]["vec"].as_numpy())
     
     
     def add_cells_from_reader(self):
@@ -452,20 +451,18 @@ class NetworkBuilder:
         e1 = 60
         e2 = -90
         rate = self.noise["rate"] / 1000 # 1 / ms
-        noise_eqtime = 1000
-        # h.t = -noise_eqtime
         
         def gen_spike_times(rate, simdur): # simdur in ms, rate in 1/ms.
             num_spikes = np.random.poisson(rate * simdur)
             isi = np.random.exponential(1 / rate, num_spikes)
-            spike_times = np.cumsum(isi)
-            return spike_times[spike_times < simdur]
+            spike_times = np.cumsum(isi) + self.eq_time
+            return spike_times[spike_times < (simdur+self.eq_time)]
         
         for name, cell in self.cells.items():
-            e0 = cell.section(0.5).v
+            e0 = self.v0[name]
             
-            n1 = gen_spike_times(rate, self.simdur)
-            n2 = gen_spike_times(rate, self.simdur)
+            n1 = gen_spike_times(rate, self.simdur+self.noise_eq_time)
+            n2 = gen_spike_times(rate, self.simdur+self.noise_eq_time)
 
             vs1 = h.VecStim()
             vec1 = h.Vector(n1)
@@ -475,12 +472,14 @@ class NetworkBuilder:
             vec2 = h.Vector(n2)
             vs2.play(vec2)
 
-            syn1 = h.ExpSyn(cell.section(0.5))
-            syn1.tau = self.noise["tau"]
+            syn1 = h.Exp2Syn(cell.section(0.5))
+            syn1.tau1 = self.noise["tau"] / 100
+            syn1.tau2 = self.noise["tau"]
             syn1.e = e1
             
-            syn2 = h.ExpSyn(cell.section(0.5))
-            syn2.tau = self.noise["tau"]
+            syn2 = h.Exp2Syn(cell.section(0.5))
+            syn2.tau1 = self.noise["tau"] / 100
+            syn2.tau2 = self.noise["tau"]
             syn2.e = e2
             
             # Connect the NetStim to the synapse via a NetCon
@@ -491,6 +490,53 @@ class NetworkBuilder:
             self.noise_cons[name] = (
                 {"vecstim": vs1, "syn": syn1, "netcon": nc1},
                 {"vecstim": vs2, "syn": syn2, "netcon": nc2}
+            )
+    
+            
+    def add_noise_old(self):
+        # self.compute_input_resistance()
+        e1 = 60
+        e2 = -90
+        rate = self.noise["rate"] / 1000 # 1 / ms
+        
+        def spike_num(rate, simdur):
+            return rate*simdur
+        
+        for name, cell in self.cells.items():
+            e0 = cell.section(0.5).v
+            
+            num = spike_num(rate, self.simdur+self.noise_eq_time)
+
+            ns1 = h.NetStim()
+            ns1.number = num
+            ns1.start = self.eq_time
+            ns1.interval = 1 / rate
+            ns1.noise = 1.0
+            
+            ns2 = h.NetStim()
+            ns2.number = num
+            ns2.start = self.eq_time
+            ns2.interval = 1 / rate
+            ns2.noise = 1.0
+
+            syn1 = h.Exp2Syn(cell.section(0.5))
+            syn1.tau1 = self.noise["tau"] / 100
+            syn1.tau2 = self.noise["tau"]
+            syn1.e = e1
+            
+            syn2 = h.Exp2Syn(cell.section(0.5))
+            syn2.tau1 = self.noise["tau"] / 100
+            syn2.tau2 = self.noise["tau"]
+            syn2.e = e2
+            
+            # Connect the NetStim to the synapse via a NetCon
+            nc1 = h.NetCon(ns1, syn1)
+            nc1.weight[0] = np.abs((e2 - e0) / (e1 - e0)) * self.noise["scale"]  # Synaptic weight in μS
+            nc2 = h.NetCon(ns2, syn2)
+            nc2.weight[0] = self.noise["scale"] # Synaptic weight in μS
+            self.noise_cons[name] = (
+                {"netstim": ns1, "syn": syn1, "netcon": nc1},
+                {"netstim": ns2, "syn": syn2, "netcon": nc2}
             )
     
     
@@ -528,7 +574,7 @@ class NetworkBuilder:
         """
         assert name in self.cells, f"Cell name '{name}' not found in cells dict"
         assert 0.0 <= loc <= 1.0, f"loc '{loc}' must be between 0.0 and 1.0, inclusive"
-        ic = self.cells[name].iclamp(delay, dur, amp, loc)
+        ic = self.cells[name].iclamp(delay+self.eq_time+self.noise_eq_time, dur, amp, loc)
         self.current_clamps.setdefault(name, {})
         if loc in self.current_clamps[name]:
             self.current_clamps[name][loc].append(ic)
@@ -581,7 +627,7 @@ class NetworkBuilder:
     
     
     def record_voltage_only(self):
-        gc.collect()
+        self.voltage_only = True
         self.recording["t"] = h.Vector().record(h._ref_t)
         for name, cell in self.cells.items():
             cell.recording = {0.5: {"V": h.Vector().record(cell.section(0.5)._ref_v)}}
@@ -609,6 +655,7 @@ class NetworkBuilder:
             all_locs (bool, optional): If true, ignores at_locs argument. Defaults to False.
             at_locs (list, optional): _description_. Defaults to [0.5].
         """
+        self.voltage_only = False
         self.recording["t"] = h.Vector().record(h._ref_t)
         if all_locs:
             locs = [seg.x for seg in cell.section]
@@ -663,22 +710,21 @@ class NetworkBuilder:
             self.record_all(all_locs=all_locs, at_locs=at_locs)
     
     
-    def equilibrate(self):
-        """_summary_
-        """
-        print("Equilibrating...")
-        h.cvode.active(True)
-        h.cvode.atol(self.atol)
-        h.celsius = self.temp
-        h.secondorder = self.secondorder
-        h.t = -self.eq_time
+    def setup_run(self, all_locs:bool=False, voltage_only:bool=False, at_locs=[0.5]):
+        if self.dt > 0:
+            h.dt = self.dt
+        # if not self.ran_before:
+        self.record(voltage_only, all_locs=all_locs, at_locs=at_locs) 
+        
         for name, c in self.cells.items():
             for seg in c.section:
                 seg.v = self.v0[name]
-        h.finitialize()
-        h.continuerun(self.eq_time)
-        h.t = 0
-    
+        if self.secondorder == 2:
+            h.cvode.active(True)
+            h.cvode.atol(self.atol)
+        h.celsius = self.temp
+        h.secondorder = self.secondorder
+        
     
     def run(self, all_locs=False, at_locs=[0.5], voltage_only=False):
         """_summary_
@@ -687,18 +733,12 @@ class NetworkBuilder:
             temp (float, optional): Temperature to set simulation at. Defaults to 6.3 (giant squid axon model temperature).
             at_locs (List[float], optional): Provide the locations on the segment to record in every cell. Will error if a location is not on the segment. Defaults to [0.5].
             all_locs (boolean, optional): If true, will record data at every location in the segment in every cell and ignores at_locs argument. Defaults to False.
-        """ 
-        # self.equilibrate()
-        if self.dt > 0:
-            h.dt = self.dt
-        # elif self.ran_before:
-        #     h.cvode.re_init()
-        if not self.ran_before:
-            self.record(voltage_only, all_locs=all_locs, at_locs=at_locs) 
+        """
+        self.setup_run(all_locs, voltage_only, at_locs)
         print("Running simulation...")
         start_time = time.time()
         h.finitialize()
-        h.continuerun(self.simdur)
+        h.continuerun(self.eq_time+self.noise_eq_time+self.simdur)
         end_time = time.time()
         self.simtime = end_time - start_time
         self.ran_before = True
@@ -772,7 +812,15 @@ class NetworkBuilder:
         """
         c = self.cells[name]
         cell_data = c.get_data(loc)
-        if self.noise is not None and not self.record_voltage_only:
+        adjust_t = 0
+        if self.dt > 0:
+            if self.secondorder == 1:
+                adjust_t = self.dt/2
+            elif self.secondorder == 2:
+                adjust_t = -self.dt/2
+        cell_data["t"] = self.recording["t"].as_numpy()+adjust_t
+        indices = np.where(cell_data["t"] > (self.eq_time + self.noise_eq_time))[0]
+        if self.noise is not None and not self.voltage_only:
             noise1 = cell_data.pop("noise1")
             noise2 = cell_data.pop("noise2")
             cell_data["noise"] = noise1 + noise2
@@ -783,13 +831,9 @@ class NetworkBuilder:
             if loc in clamp_recording:
                 if len(clamp_recording[loc]) > 0:
                     cell_data[f"{clamp_type}_applied_{loc}"] = np.sum([r.as_numpy() for r in clamp_recording[loc]], axis=0)
-        adjust_t = 0
-        if self.dt > 0:
-            if self.secondorder == 1:
-                adjust_t = self.dt/2
-            elif self.secondorder == 2:
-                adjust_t = -self.dt/2
-        cell_data["t"] = self.recording["t"].as_numpy()+adjust_t
+        for k in cell_data.keys():
+            cell_data[k] = cell_data[k][indices]  # Modify dictionary in-place
+        cell_data["t"] -= cell_data["t"][0]
         return copy.deepcopy(cell_data)
             
     
