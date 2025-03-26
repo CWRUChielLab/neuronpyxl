@@ -35,8 +35,8 @@ cwd = os.getcwd() # Get current working directory in which to create files.
 ###################################################################
 # Set up command line arguments
 parser = argparse.ArgumentParser(description="Process NEURON simulation arguments.")
-parser.add_argument('-f', type=str, choices=['gen_mods', 'run_sim'], help="Function to run. The options are 'gen_mods' or 'run_sim'.")
-parser.add_argument('--file', type=str, help="File name of the control excel sheet describing the simulation.")
+parser.add_argument('-f', required=True, type=str, choices=['gen_mods', 'run_sim'], help="Function to run. The options are 'gen_mods' or 'run_sim'.")
+parser.add_argument('--file', required=True, type=str, help="File name of the control excel sheet describing the simulation.")
 parser.add_argument('--name', type=str, help="Name of the simulation.")
 parser.add_argument('--duration', type=float, default=10000.0, help="Duration of the simulations in ms. Default is 30000.")
 parser.add_argument('--noise', type=float, nargs=3, default=None, help="Noise parameters for an Exponential Synapse noise model. noise[0] = rate (Hz), noise[1] = weight (nS), noise[2] = tau (ms).")
@@ -122,48 +122,38 @@ def run_sim(name: str, file: str, step:float=-1., duration:float=10000., method:
     
     # Save data
     print(f"Saving data...")
-    
-    if interp < 0: # Save raw data
-        if not vonly: # If all currents and concentrations are recorded, then save each cell's data in its own .h5 file.
-            for c in nb.cells.keys():
+ 
+    if vonly: # if only voltage and time are recorded
+        data = {}
+        for c in nb.cells.keys():
+            if interp <= 0:
                 cell_data = nb.get_cell_data(c)
-                pd.DataFrame(cell_data).to_hdf(os.path.join(results_folder, f"{c}.h5"), key="data", mode='w')
-            if syn: # If synaptic currents are recorded, save them to their own file.
-                chemsyn_data, elecsyn_data = nb.get_synaptic_current_data()
-        else: # If only membrane potentials are recorded, save all of the data in one file.
-            data = {}
-            for c in nb.cells.keys():
+            else:
+                tvec = np.arange(start=0,stop=duration,step=interp)
+                cell_data = nb.get_interpolated_cell_data(c, tvec)
+            if "t" not in data:
+                data["t"] = cell_data["t"]
+            data[f"V_{c}"] = cell_data["V"]
+        pd.DataFrame(data).to_hdf(os.path.join(results_folder, f"{name}_data.h5"), key="data", mode='w')
+    else: # If all currents and concentrations are recorded, then save each cell's data in its own .h5 file.
+        for c in nb.cells.keys():
+            if interp <= 0:
                 cell_data = nb.get_cell_data(c)
-                if "t" not in data:
-                    data["t"] = cell_data["t"]
-                data[f"V_{c}"] = cell_data["V"]
-            pd.DataFrame(data).to_hdf(os.path.join(results_folder, f"{name}_data.h5"), key="data", mode='w')
-            
-    if interp > 0: # Interpolate data to provided timestep then save
-        tvec = np.arange(start=0, stop=duration, step=interp)
-        if not vonly: # If all currents and concentrations are recorded, then save each cell's data in its own .h5 file.
-            for c in nb.cells.keys():
+                if syn:
+                    chemsyn_data, elecsyn_data = nb.get_synaptic_current_data()
+            else:
+                tvec = np.arange(start=0,stop=duration,step=interp)
                 cell_data = nb.get_interpolated_cell_data(c, tvec)
-                pd.DataFrame(cell_data).to_hdf(os.path.join(results_folder, f"{c}.h5"), key="data", mode='w')
-            if syn: # If synaptic currents are recorded, save them to their own file.
-                chemsyn_data, elecsyn_data = nb.get_interpolated_syn_data(tvec)
-        else: # If only membrane potentials are recorded, save all of the data in one file.
-            data = {}
-            for c in nb.cells.keys():
-                cell_data = nb.get_interpolated_cell_data(c, tvec)
-                if "t" not in data:
-                    data["t"] = cell_data["t"]
-                data[f"V_{c}"] = cell_data["V"]
-            pd.DataFrame(data).to_hdf(os.path.join(results_folder, f"{name}_data.h5"), key="data", mode='w')
-            
-    if syn and not vonly: # Save synaptic currents data if specified. Otherwise, don't.
-        if chemsyn_data is not None:
-            pd.DataFrame(chemsyn_data).to_hdf(os.path.join(results_folder, f"chemical_synapses.h5"), key="data", mode='w')
-        if elecsyn_data is not None:
-            pd.DataFrame(elecsyn_data).to_hdf(os.path.join(results_folder, f"electrical_synapses.h5"), key="data", mode='w')
-            
+                if syn:
+                    chemsyn_data, elecsyn_data = nb.get_interpolated_syn_data(tvec)
+                    if chemsyn_data is not None: # could be none if there are one of cs or es present
+                        pd.DataFrame(chemsyn_data).to_hdf(os.path.join(results_folder, f"chemical_synapses.h5"), key="data", mode='w')
+                    if elecsyn_data is not None:
+                        pd.DataFrame(elecsyn_data).to_hdf(os.path.join(results_folder, f"electrical_synapses.h5"), key="data", mode='w')
+            pd.DataFrame(cell_data).to_hdf(os.path.join(results_folder, f"{c}.h5"), key="data", mode='w')
+
     # Save metadata
-    nb.generate_metadata(voltage_only=vonly) # Generate a metadat file stored in info.txt
+    nb.generate_metadata(voltage_only=vonly) # Generate a metadata file stored in info.txt
     print(f"Simulation complete! Data has been saved to {results_folder}/.\nSimulation info can be found in {results_folder}/info.txt")
 
 ###################################################################

@@ -32,7 +32,6 @@ import sys
 import os
 import platform
 import time
-# import random
 from scipy.interpolate import CubicSpline
 from pysnnap import cell, reader
 from typing import Tuple
@@ -118,30 +117,53 @@ class NetworkBuilder:
         if self.noise is not None:
             self.add_noise()
         self.add_iclamps_from_reader()
-    
+
     
     def add_cells_from_reader(self):
         """Adds all of the cells present in the model into the network, along with their corresponding mechanisms.
         Sets all of the parameter values of each mechanism in each cell according to those present in the spreadsheet.
         """
+        def set_activation_parameters(vdg_parameters, key, r, var):
+            """A and B are identical sets of equations, so this function sets all parameter values
+            accounting for every possible variable combination that exists within the SNNAP model.
+
+            Args:
+                vdg_parameters (_type_): main parameter dictionary (see below)
+                r (_type_): row of the df
+                key (_type_): ion channel mechanism
+                var (_type_): A or B
+            """
+            if pd.isna(r[var]["tmx"]):
+                vdg_parameters[key][f"{var}infonly"] = 1
+            for param, val in r[var].items():
+                if not pd.isna(val):
+                    vdg_parameters[key][f"{param}{var}"] = val
+                    if not f"{var}infonly" in vdg_parameters[key]:
+                        if param == "tmx" and (r[var]["ts1"] == 0 or pd.isna(r[var]["ts1"])):
+                            vdg_parameters[key][f"tmx{var}only"] = 1
+                            vdg_parameters[key][f"num{var.lower()}taus"] = 1
+            if not pd.isna(r[var]["ts1"]) and r[var]["ts1"] != 0:
+                if pd.isna(r[var]["ts2"]) or r[var]["ts2"] == 0:
+                    vdg_parameters[key][f"num{var.lower()}taus"] = 1
+                else:
+                    vdg_parameters[key][f"num{var.lower()}taus"] = 2
+                    
         # Read all mechanisms present
         # Reads cells data, which includes cell names and membrane capacitance
         cell_data = self.reader.cells_data
         # Get mechanism parameters for each cell
-        mechs_data = self.reader.mechs_data[self.reader.mechs_data.index != 0]
-        mechs_data = mechs_data.dropna(axis=0, how="all")
+        mechs_data = self.reader.mechs_data[self.reader.mechs_data.index != 0].dropna(axis=0, how="all")
         mechs = [m for m in mechs_data.columns.levels[0] if "Unnamed" not in m and "File" not in m]
         self.all_mechs = []
-        if mechs_data.empty or cell_data.empty:
-            print("You must run a simulation with at least one cell.")
-            sys.exit()
+        assert not mechs_data.empty and not cell_data.empty, "You must run a simulation with at least one cell."
+
         # Set parameter values for all cells and all mechanisms
-        for name, row in mechs_data.iterrows(): # Name is the cell name
-            current_mechs = {}
+        for name, row in mechs_data.iterrows(): # Name is the cell name, row is the row in the 'Neu' sheet
+            vdg_parameters = {}
             cm = cell_data.loc[name]["cm"] # get membrane capacitance
             for m in mechs:
                 if m in row:
-                    r = row[m]
+                    r = row[m] # row of the parameters df
                 else:
                     continue
                 if not r["vdg"].isna().to_numpy().all():
@@ -149,60 +171,34 @@ class NetworkBuilder:
                     key = m.lower().strip().replace("_", "")
                     if key not in self.all_mechs:
                         self.all_mechs.append(key)
-                    current_mechs[key] = {}
+                    vdg_parameters[key] = {}
                     # Get the conductance and reversal potential
-                    current_mechs[key]["g"] = r["vdg"]["g"]
-                    current_mechs[key]["e"] = r["vdg"]["E"]
+                    vdg_parameters[key]["g"] = r["vdg"]["g"]
+                    vdg_parameters[key]["e"] = r["vdg"]["E"]
                     if key == "leak": # Leak will always have just g and e, so continue if this mech is leak
                         continue
                     if "p" in r["vdg"].index:
-                        current_mechs[key]["p"] = r["vdg"]["p"]
+                        vdg_parameters[key]["p"] = r["vdg"]["p"]
                     if not pd.isna(r["A"]).all(): # if there are no As, there aren't any Bs.
-                        if pd.isna(r["A"]["tmx"]):
-                            current_mechs[key][f"Ainfonly"] = 1
-                        for param, val in r["A"].items():
-                            if not pd.isna(val):
-                                current_mechs[key][f"{param}A"] = val
-                                if not "Ainfonly" in current_mechs[key]:
-                                    if param == "tmx" and (r["A"]["ts1"] == 0 or pd.isna(r["A"]["ts1"])):
-                                        current_mechs[key][f"tmxAonly"] = 1
-                                        current_mechs[key][f"numataus"] = 1
-                        if not pd.isna(r["A"]["ts1"]) and r["A"]["ts1"] != 0:
-                            if pd.isna(r["A"]["ts2"]) or r["A"]["ts2"] == 0:
-                                current_mechs[key][f"numataus"] = 1
-                            else:
-                                current_mechs[key][f"numataus"] = 2
+                        set_activation_parameters(vdg_parameters, key, r, "A")
                         if not pd.isna(r["B"]).all():
-                            if pd.isna(r["B"]["tmx"]):
-                                current_mechs[key][f"Binfonly"] = 1
-                            for param, val in r["B"].items():
-                                if not pd.isna(val):
-                                    current_mechs[key][f"{param}B"] = val
-                                    if not "Binfonly" in current_mechs[key]:
-                                        if param == "tmx" and (r["B"]["ts1"] == 0 or pd.isna(r["B"]["ts1"])):
-                                            current_mechs[key][f"tmxBonly"] = 1
-                                            current_mechs[key][f"numbtaus"] = 1
-                            if not pd.isna(r["B"]["ts1"]) and r["B"]["ts1"] != 0:
-                                if pd.isna(r["B"]["ts2"]) or r["B"]["ts2"] == 0:
-                                    current_mechs[key][f"numbtaus"] = 1
-                                else:
-                                    current_mechs[key][f"numbtaus"] = 2
+                            set_activation_parameters(vdg_parameters, key, r, "B")
                         else:
-                            current_mechs[key][f"numbtaus"] = 0
+                            vdg_parameters[key][f"numbtaus"] = 0
                     else:
-                        current_mechs[key][f"numataus"] = 0
-                        current_mechs[key][f"numbtaus"] = 0
+                        vdg_parameters[key][f"numataus"] = 0
+                        vdg_parameters[key][f"numbtaus"] = 0
             # Create the Cell object
-            mechs_with_prefix = [self.prefix + m for m in current_mechs.keys()]
-            c = cell.Cell(name=name, current_mechs=mechs_with_prefix, cm=cm)
-            # Set the parameter values of the mechanisms in this cell 
-            for mech, d in current_mechs.items():
+            mechs_with_prefix = [self.prefix + m for m in vdg_parameters.keys()] # Need to add "pysnnap_" before every mechanism (see mod files)
+            c = cell.Cell(name=name, current_mechs=mechs_with_prefix, cm=cm) # create a cell, which inserts mechanisms into the cell
+            # Set the parameter values of the mechanisms in this cell  based on the now-filled vdg_parameters dictionary
+            for mech, d in vdg_parameters.items():
                 for param, val in d.items():
                     setattr(c.section(0.5), f"{param}_{self.prefix}{mech}", val)
             # Add the cell to the network
             self.add_cell(c)
             print(f"Added {c} to the network.")
-        
+              
     
     def feed_pools_from_reader(self):
         """Sets up the ion pool feeding mechanism from python according to the implementation in NMODL.
