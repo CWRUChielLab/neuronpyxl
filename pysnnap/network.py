@@ -101,6 +101,15 @@ class NetworkBuilder:
         self.ran_before = False
     
     
+    def add_cell(self, cell: cell.Cell):
+        """Function to add a cell to the network.
+
+        Args:
+            cell (Cell): a Cell object
+        """
+        self.cells[cell.name] = cell
+    
+    
     def setup(self, file):
         """Calls all of the functions in order to build the network from the provided Excel file.
 
@@ -433,6 +442,16 @@ class NetworkBuilder:
         else:
             self.v0 = df_v0[df_v0.index != 0].to_dict()["mV"]
 
+
+    def print_cell_section(self, name: str, loc: float):
+        """Given a cell name, prints all of the mechanisms and parameter values in the provided cell name and location.
+
+        Args:
+            name (str): name of the cell to print
+            loc (float): location at which to print
+        """
+        h.psection(self.cells[name].section(loc))
+
     
     def compute_input_resistance(self):
         for name, cell in self.cells.items():
@@ -441,55 +460,8 @@ class NetworkBuilder:
             z.compute(0)  # Compute impedance at frequency f=0 (DC)
             self.input_resistance[name] = z.input(0.5, sec=cell.section)  # Location 0.5 is the center of the soma
     
-    
+            
     def add_noise(self):
-        # self.compute_input_resistance()
-        e1 = 60
-        e2 = -90
-        rate = self.noise["rate"] / 1000 # 1 / ms
-        
-        def gen_spike_times(rate, simdur): # simdur in ms, rate in 1/ms.
-            num_spikes = np.random.poisson(rate * simdur)
-            isi = np.random.exponential(1 / rate, num_spikes)
-            spike_times = np.cumsum(isi) + self.eq_time
-            return spike_times[spike_times < (simdur+self.eq_time)]
-        
-        for name, cell in self.cells.items():
-            e0 = self.v0[name]
-            
-            n1 = gen_spike_times(rate, self.simdur+self.noise_eq_time)
-            n2 = gen_spike_times(rate, self.simdur+self.noise_eq_time)
-
-            vs1 = h.VecStim()
-            vec1 = h.Vector(n1)
-            vs1.play(vec1)
-
-            vs2 = h.VecStim()
-            vec2 = h.Vector(n2)
-            vs2.play(vec2)
-
-            syn1 = h.Exp2Syn(cell.section(0.5))
-            syn1.tau1 = self.noise["tau"] / 100
-            syn1.tau2 = self.noise["tau"]
-            syn1.e = e1
-            
-            syn2 = h.Exp2Syn(cell.section(0.5))
-            syn2.tau1 = self.noise["tau"] / 100
-            syn2.tau2 = self.noise["tau"]
-            syn2.e = e2
-            
-            # Connect the NetStim to the synapse via a NetCon
-            nc1 = h.NetCon(vs1, syn1)
-            nc1.weight[0] = np.abs((e2 - e0) / (e1 - e0)) * self.noise["scale"]  # Synaptic weight in μS
-            nc2 = h.NetCon(vs2, syn2)
-            nc2.weight[0] = self.noise["scale"] # Synaptic weight in μS
-            self.noise_cons[name] = (
-                {"vecstim": vs1, "syn": syn1, "netcon": nc1},
-                {"vecstim": vs2, "syn": syn2, "netcon": nc2}
-            )
-    
-            
-    def add_noise_old(self):
         # self.compute_input_resistance()
         e1 = 60
         e2 = -90
@@ -515,14 +487,12 @@ class NetworkBuilder:
             ns2.interval = 1 / rate
             ns2.noise = 1.0
 
-            syn1 = h.Exp2Syn(cell.section(0.5))
-            syn1.tau1 = self.noise["tau"] / 100
-            syn1.tau2 = self.noise["tau"]
+            syn1 = h.ExpSyn(cell.section(0.5))
+            syn1.tau = self.noise["tau"]
             syn1.e = e1
             
-            syn2 = h.Exp2Syn(cell.section(0.5))
-            syn2.tau1 = self.noise["tau"] / 100
-            syn2.tau2 = self.noise["tau"]
+            syn2 = h.ExpSyn(cell.section(0.5))
+            syn2.tau = self.noise["tau"]
             syn2.e = e2
             
             # Connect the NetStim to the synapse via a NetCon
@@ -534,25 +504,6 @@ class NetworkBuilder:
                 {"netstim": ns1, "syn": syn1, "netcon": nc1},
                 {"netstim": ns2, "syn": syn2, "netcon": nc2}
             )
-    
-    
-    def add_cell(self, cell: cell.Cell):
-        """Function to add a cell to the network.
-
-        Args:
-            cell (Cell): a Cell object
-        """
-        self.cells[cell.name] = cell
-    
-    
-    def print_cell_section(self, name: str, loc: float):
-        """Given a cell name, prints all of the mechanisms and parameter values in the provided cell name and location.
-
-        Args:
-            name (str): name of the cell to print
-            loc (float): location at which to print
-        """
-        h.psection(self.cells[name].section(loc))
     
     
     def attach_iclamp(self, name: str, loc=0.5, delay=None, dur=None, amp=None):
