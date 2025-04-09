@@ -50,8 +50,8 @@ class NetworkBuilder:
         """
         self.cwd = os.getcwd()
         h.load_file("stdrun.hoc")
-        if platform.uname()[0] == "Windows":
-            h.nrn_load_dll(os.path.join(self.cwd, "nrnmech.dll"))
+        # if platform.uname()[0] == "Windows":
+        #     h.nrn_load_dll(os.path.join(self.cwd, "nrnmech.dll"))
         self.name = "sim"
         self.cells = {} # Dict[cell name -> Cell object] (see cell.py)
         
