@@ -49,7 +49,7 @@ This saves your data into one or more HDF5 files located in Data/simname_data/.
 
 There are other parameters to further customize your simulation.
 
-- --file filename:
+- --file filename: path to Excel file to run.
 - --name simname: the simulation from the spreadsheet you want to run (simname.smu)
 - --duration dur: runs simulation for dur ms.
 - --noise freq weight tau: noise parameters. freq in Hz, weight in uS, tau in ms. If not provided, noise will not be included.
