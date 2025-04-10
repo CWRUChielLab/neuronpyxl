@@ -1,23 +1,23 @@
 """
-This file is part of PySNNAP.
+This file is part of neuronpyxl.
 
 The ControlReader is a helper class to read in the parameters from the Excel spreadsheet models.
 FYI: This code was taylored to the exact format of the Excel spreadsheets, so adding new features requires significant refactoring of code.
 
 Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
-pySNNAP is free software: you can redistribute it and/or modify
+neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 any later version.
 
-pySNNAP is distributed in the hope that it will be useful,
+neuronpyxl is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with pySNNAP. If not, see <https://www.gnu.org/licenses/>.
+along with neuronpyxl. If not, see <https://www.gnu.org/licenses/>.
 """
 
 import pandas as pd

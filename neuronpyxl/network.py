@@ -1,7 +1,7 @@
 """
-This file is part of PySNNAP.
+This file is part of neuronpyxl.
 
-The NetworkBuilder class is the central class for pySNNAP. It takes the simplified results from the
+The NetworkBuilder class is the central class for neuronpyxl. It takes the simplified results from the
 ControlReader and generates the entire network from that information, assuming that the correctly-named mod 
 files are already compiled (see ModBuilder). It also has capabilities to run simulations and record
 the data directly from NEURON. These functions can be accessed either through cmd_util.py or by creating
@@ -9,18 +9,18 @@ a NetworkBuilder object and running the simulations from another .py file.
 
 Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
-pySNNAP is free software: you can redistribute it and/or modify
+neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 any later version.
 
-pySNNAP is distributed in the hope that it will be useful,
+neuronpyxl is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with pySNNAP. If not, see <https://www.gnu.org/licenses/>.
+along with neuronpyxl. If not, see <https://www.gnu.org/licenses/>.
 """
 
 from neuron import h
@@ -33,7 +33,7 @@ import os
 import platform
 import time
 from scipy.interpolate import CubicSpline
-from pysnnap import cell, reader
+from neuronpyxl import cell, reader
 from typing import Tuple
 import warnings
 
@@ -74,7 +74,7 @@ class NetworkBuilder:
         self.zero_ref = h.Vector(1) # Create a 0 reference in case there are unused hoc pointers
         self.zero_ref.x[0] = 0  # Set the first element to zero
         
-        self.prefix = "pysnnap_" # mod file
+        self.prefix = "neuronpyxl_" # mod file
         # Simulation setup parameters
         self.dt = dt
         self.integrator = integrator # can be 1 or 2 (1: Backwards Euler, 2: Crank-Nicholson)
@@ -198,7 +198,7 @@ class NetworkBuilder:
                         vdg_parameters[key][f"numataus"] = 0
                         vdg_parameters[key][f"numbtaus"] = 0
             # Create the Cell object
-            mechs_with_prefix = [self.prefix + m for m in vdg_parameters.keys()] # Need to add "pysnnap_" before every mechanism (see mod files)
+            mechs_with_prefix = [self.prefix + m for m in vdg_parameters.keys()] # Need to add "neuronpyxl_" before every mechanism (see mod files)
             c = cell.Cell(name=name, current_mechs=mechs_with_prefix, cm=cm) # create a cell, which inserts mechanisms into the cell
             # Set the parameter values of the mechanisms in this cell  based on the now-filled vdg_parameters dictionary
             for mech, d in vdg_parameters.items():
@@ -296,7 +296,7 @@ class NetworkBuilder:
         for (pre, post), g in esg_stacked.items():
             presyn = self.cells[pre]
             postsyn = self.cells[post]
-            syn = h.pysnnap_ES(postsyn.section(0.5))
+            syn = h.neuronpyxl_ES(postsyn.section(0.5))
             # Set max conductance
             syn.g = g
             # Set up presynaptic potential pointer (works the same as gap junction NEURON mechanism file)
@@ -324,7 +324,7 @@ class NetworkBuilder:
                         continue
                     presyn = self.cells[pre]
                     postsyn = self.cells[post]
-                    syn = h.pysnnap_CS(postsyn.section(0.5))
+                    syn = h.neuronpyxl_CS(postsyn.section(0.5))
                     params = {}
                     # Set up parameters dictionary
                     for k, v in dfparams[pre][post].dropna().to_dict().items():

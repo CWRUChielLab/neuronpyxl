@@ -1,26 +1,26 @@
 """
-This file is part of pySNNAP.
+This file is part of neuronpyxl.
 
 The ModBuilder class is necessary for running SNNAP-like simulations. It uses the stencil files located
-in pysnnap/modls/ to generate the mod files. There will be 1 mod file for each ion channel, and it will use the 
+in neuronpyxl/modls/ to generate the mod files. There will be 1 mod file for each ion channel, and it will use the 
 correct ion in that channel if notated properly (name of the ion channel has to start with either Cl, Ca, K, or Na,
 not case-sensitive). These files detail the equations that can be used within the simulation, the parameters
 of which are set in the NetworkBuilder class. Will use a nonspecific ion if it doesn not begin with one of those ions.
 
 Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
-pySNNAP is free software: you can redistribute it and/or modify
+neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 any later version.
 
-pySNNAP is distributed in the hope that it will be useful,
+neuronpyxl is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with pySNNAP. If not, see <https://www.gnu.org/licenses/>.
+along with neuronpyxl. If not, see <https://www.gnu.org/licenses/>.
 """
 
 import pandas as pd
@@ -41,7 +41,7 @@ class ModBuilder:
             file (str): file path to a .xlsx spreadsheet.
         """
         assert file.split(sep=".")[-1] == "xlsx", f"File '{file}' must be a .xlsx file. See sample spreadsheet blank.xlsx."
-        self.modls_path = files("pysnnap.modls") # Get the files from pySNNAP
+        self.modls_path = files("neuronpyxl.modls") # Get the files from neuronpyxl
         self.mod_path = os.path.join(os.getcwd(), "mod") # Ensure that files are created in current working directory
         self.xls = pd.ExcelFile(file)
         self.nrows = 21 # TODO: make this adapt to the number of cells in the spreadsheet
@@ -200,7 +200,7 @@ class ModBuilder:
                     modl_path = self.modls_path.joinpath(f"nonspec.mod")
                 line12.pop(-1)
                 
-                copy_and_modify_file(modl_path, os.path.join(self.mod_path, f"{ch}.mod"), line_number, f"\tSUFFIX pysnnap_{ch}")
+                copy_and_modify_file(modl_path, os.path.join(self.mod_path, f"{ch}.mod"), line_number, f"\tSUFFIX neuronpyxl_{ch}")
                 copy_and_modify_file(os.path.join(self.mod_path, f"{ch}.mod"), os.path.join(self.mod_path, f"{ch}.mod"), 11, "".join(line12))
     
     

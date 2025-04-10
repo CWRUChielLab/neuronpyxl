@@ -1,27 +1,27 @@
 """
-This file is part of pySNNAP.
+This file is part of neuronpyxl.
 
 This is a command-line utility for generating mod files and running single simulations based on models described by an Excel spreadsheet (see examples).
 This file must be used to generate the mod files. For running simulations in a .py file or notebook, see the examples.
 
 Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
-pySNNAP is free software: you can redistribute it and/or modify
+neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 any later version.
 
-pySNNAP is distributed in the hope that it will be useful,
+neuronpyxl is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with pySNNAP. If not, see <https://www.gnu.org/licenses/>.
+along with neuronpyxl. If not, see <https://www.gnu.org/licenses/>.
 """
 
 ###################################################################
-from pysnnap import modbuilder, network
+from neuronpyxl import modbuilder, network
 import argparse
 import subprocess
 import os

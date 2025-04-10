@@ -14,14 +14,14 @@ reqs = [
 MODULES = ["cell", "modbuilder", "network", "reader", "cmd_util"]
 
 setup(
-    name="pysnnap",
+    name="neuronpyxl",
     version="1.0.0",
     author="Uri Dickman",
-    description="pySNNAP provides an Excel spreadsheet interface bulit into Python to run SNNAP-based models via the NEURON simulator.",
+    description="neuronpyxl provides an Excel spreadsheet interface bulit into Python to run SNNAP-based models via the NEURON simulator.",
     license="GNU General Public License v3.0",
     python_requires="==3.10",  # Python 3.10 is required because some packages are not fully up to date with Python releases
     install_requires=reqs,
     py_modules=MODULES,
     packages=find_packages(),
-    package_data={"pysnnap": ["modls/*.mod"]}
+    package_data={"neuronpyxl": ["modls/*.mod"]}
 )
