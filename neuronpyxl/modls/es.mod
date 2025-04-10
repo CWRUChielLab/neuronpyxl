@@ -5,7 +5,7 @@ UNITS {
 }
 
 NEURON {
-    POINT_PROCESS pysnnap_ES
+    POINT_PROCESS neuronpyxl_ES
     RANGE g, i
     NONSPECIFIC_CURRENT i
     POINTER vpre

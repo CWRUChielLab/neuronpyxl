@@ -6,7 +6,7 @@ UNITS {
 }
 
 NEURON {
-    SUFFIX pysnnap_leak
+    SUFFIX neuronpyxl_leak
     RANGE g, e, i
     NONSPECIFIC_CURRENT i
 }

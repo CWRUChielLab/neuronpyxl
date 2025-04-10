@@ -11,7 +11,7 @@ Download and run the pre-compiled installer [here](https://github.com/neuronsimu
 
 ### Linux
 
-Install Python according to your distribution and then run `python3 pip install neuron` after creating a virtual environment (se next section).
+Install Python according to your distribution. Create a [create a virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/). Activate your virtual environment and then run `python3 pip install neuron`.
 
 ### Windows
 
@@ -31,9 +31,9 @@ If needed, see this [video](https://www.youtube.com/watch?v=jWjiPWG3DKY) for a w
 
 Clone this repository or download the Zip files and extract them to a folder. The code can be run with pip or Anaconda.
 
-If you are using pip, [create a virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/). Activate the environment, then run `python setup.py install --user`
-
 If you are using Anaconda (recommended in Windows), create the environment and install the package with `conda env create -f environment.yml`. Activate the environment with `conda activate neuronpyxl-env`.
+
+If you are using pip, [create a virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/). Make sure the environment uses Python 3.10. Activate the environment, then run `python setup.py install --user`
 
 ## Usage
 
