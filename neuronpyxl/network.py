@@ -846,7 +846,7 @@ class NetworkBuilder:
         return chem_interp, elec_interp
 
 
-    def generate_metadata(self, voltage_only):
+    def generate_metadata(self,voltage_only,folder):
         """Interpolate metadata and information regarding the simulation. Includes NEURON runtime, storage location, integration method, tiemstep and more.
         """
         def count_syns(d):
@@ -882,12 +882,12 @@ class NetworkBuilder:
                     "Number of chemical synapses": int(count_syns(self.chemical_synapses)/2)}
         
         if voltage_only:
-            metadata["Data saved to"] = f"./Data/{self.sim_name}_data/{self.sim_name}_data.h5"
+            metadata["Data saved to"] = f"{folder}/{self.sim_name}_data.h5"
         
         if self.noise is not None:
             metadata["Noise"] = f"rate = {self.noise['rate']} Hz, scale = {self.noise['scale']} uS, tau = {self.noise['tau']} ms"
             # metadata["Noise"] = f"rate = {self.noise['rate']} Hz, stddev = {self.noise['std']} ms"
         
-        with open(os.path.join(self.cwd, f"Data/{self.sim_name}_data/info.txt"), 'w') as f:
+        with open(os.path.join(self.cwd, os.path.join(folder,"info.txt")), 'w') as f:
             for key, value in metadata.items():
                 f.write(f"{key}: {value}\n")

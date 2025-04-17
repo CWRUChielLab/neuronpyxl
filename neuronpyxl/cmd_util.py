@@ -38,6 +38,7 @@ parser = argparse.ArgumentParser(description="Process NEURON simulation argument
 parser.add_argument('-f', required=True, type=str, choices=['gen_mods', 'run_sim'], help="Function to run. The options are 'gen_mods' or 'run_sim'.")
 parser.add_argument('--file', required=True, type=str, help="File name of the control excel sheet describing the simulation.")
 parser.add_argument('--name', type=str, help="Name of the simulation.")
+parser.add_argument('--folder', type=str, help="Folder name to save data to.")
 parser.add_argument('--duration', type=float, default=10000.0, help="Duration of the simulations in ms. Default is 30000.")
 parser.add_argument('--noise', type=float, nargs=3, default=None, help="Noise parameters for an Exponential Synapse noise model. noise[0] = rate (Hz), noise[1] = weight (nS), noise[2] = tau (ms).")
 parser.add_argument('--method', type=int, choices=[1, 2], default=2, help="Method of integration. 1 for Backwards Euler and 2 for Crank-Nicholson (default).")
@@ -85,7 +86,7 @@ def clear_dir(dir_path, cluster):
         # Directory does not exist, create it
         os.makedirs(dir_path)
 
-def run_sim(name: str, file: str, step:float=-1., duration:float=10000., method:int=2, atol:float=1e-5, interp:float=-1, syn:bool=False, vonly:bool=False, noise:tuple=None, teq:float=1000.0, cluster:bool=False):
+def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:float=10000., method:int=2, atol:float=1e-5, interp:float=-1, syn:bool=False, vonly:bool=False, noise:tuple=None, teq:float=1000.0, cluster:bool=False):
     """Runs a simulation from the provided file and simulation name (before .smu in Excel), provided that the mod files are properly compiled.
 
     Args:
@@ -115,9 +116,11 @@ def run_sim(name: str, file: str, step:float=-1., duration:float=10000., method:
     # Set up data directory after parameters have been loaded
     if not os.path.exists(os.path.join(cwd, "Data")):
         os.makedirs(os.path.join(cwd, "Data"))
-    results_folder = os.path.join(cwd, f"Data/{name}_data")
+    if folder is not None:
+        results_folder = os.path.join(cwd, f"Data/{folder}")
+    else:
+        results_folder = os.path.join(cwd, f"Data/{name}_data")
     clear_dir(results_folder, cluster) # Clear the directory so it is clean for the fresh data
-    
     nb.run(voltage_only=vonly) # Run the simulation, passing in vonly.
     
     # Save data
@@ -153,7 +156,7 @@ def run_sim(name: str, file: str, step:float=-1., duration:float=10000., method:
             pd.DataFrame(cell_data).to_hdf(os.path.join(results_folder, f"{c}.h5"), key="data", mode='w')
 
     # Save metadata
-    nb.generate_metadata(voltage_only=vonly) # Generate a metadata file stored in info.txt
+    nb.generate_metadata(voltage_only=vonly,folder=results_folder) # Generate a metadata file stored in info.txt
     print(f"Simulation complete! Data has been saved to {results_folder}/.\nSimulation info can be found in {results_folder}/info.txt")
 
 ###################################################################
@@ -163,4 +166,4 @@ if __name__ == "__main__":
     if func == "gen_mods":
         gen_mods(args.file, args.cluster)
     elif func == "run_sim":
-        run_sim(name=args.name, file=args.file, duration=args.duration, step=args.step, method=args.method, atol=args.atol, interp=args.interp, syn=args.syn, vonly=args.vonly, noise=args.noise, teq=args.teq, cluster=args.cluster)
+        run_sim(name=args.name, file=args.file, folder=args.folder, duration=args.duration, step=args.step, method=args.method, atol=args.atol, interp=args.interp, syn=args.syn, vonly=args.vonly, noise=args.noise, teq=args.teq, cluster=args.cluster)

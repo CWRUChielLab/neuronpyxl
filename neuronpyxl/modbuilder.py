@@ -214,7 +214,7 @@ class ModBuilder:
             with open(self.modls_path.joinpath(f"pool.mod"), 'r') as file:
                 lines = file.readlines()
             
-            lines[7] = f"\tSUFFIX pysnnap_{ch}pool" + '\n'
+            lines[7] = f"\tSUFFIX neuronpyxl_{ch}pool" + '\n'
             lines[8] = f"\tUSEION {ch} WRITE {ch}i VALENCE {self.valence[ch]}" + '\n'
             
             pointer_line = "\tPOINTER "
