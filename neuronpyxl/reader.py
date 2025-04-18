@@ -35,46 +35,46 @@ class ControlReader:
             sim_name (str): name of the simulation to retrieve the current injection information from. The sim name is from sim_name.smu
             nrows (int): number of rows to look at (number of cells in the network)
         """
-        self.xls = pd.ExcelFile(filename)
         self.nrows = nrows # (figure this out later)
         self.usecols_neurons = f"{xlsxwriter.utility.xl_col_to_name(1)}:{xlsxwriter.utility.xl_col_to_name(nrows+1)}"
         self.sim_name = sim_name
-        self.read_data() # read in all of the data
+        self.read_data(filename) # read in all of the data
         
         
-    def read_data(self):
+    def read_data(self,filename):
         """Reads in all of the data from the Excel spreadsheet and saves it as dataframes in class variables.
         """
+        xls = open(pd.ExcelFile(filename,engine='openpyxl'),"rb")
         #### neu
-        df_neu = pd.read_excel(self.xls, 'Neu', header=[0,1,2], index_col=0, nrows=self.nrows)
+        df_neu = pd.read_excel(xls, 'Neu', header=[0,1,2], index_col=0, nrows=self.nrows)
         self.mechs_data = df_neu.iloc[:, 3:] # Reads in all of the mechanism names
-        df_cells = pd.read_excel(self.xls, 'Neu', header=2, index_col=0, nrows=self.nrows)
+        df_cells = pd.read_excel(xls, 'Neu', header=2, index_col=0, nrows=self.nrows)
         self.cells_data = df_cells.iloc[:, [0,2]] # Biophysical properties from each cell (name and Cm)
         
         #### ion pools
-        df_temp = pd.read_excel(self.xls, sheet_name="Neu")
+        df_temp = pd.read_excel(xls, sheet_name="Neu")
         
         start_row_pools = 2 + df_temp.index[df_temp.iloc[:, 3] == "Ion pools"][0]
-        df_pools = pd.read_excel(self.xls, sheet_name="Neu", header=start_row_pools, index_col=0, nrows=self.nrows, usecols="D:M")
+        df_pools = pd.read_excel(xls, sheet_name="Neu", header=start_row_pools, index_col=0, nrows=self.nrows, usecols="D:M")
         self.ion_pools_data = self.rename_df_cols(df_pools) # All of the ion pools present in the model.
 
         #### conductance to ion
         start_row_cond = 2 + df_temp.index[df_temp.iloc[:, 14] == "Conductance to ion"][0]
-        df_cond = pd.read_excel(self.xls, sheet_name="Neu", header=start_row_cond, index_col=0, nrows=self.nrows, usecols="O:W")
+        df_cond = pd.read_excel(xls, sheet_name="Neu", header=start_row_cond, index_col=0, nrows=self.nrows, usecols="O:W")
         self.cond_to_ion_data = self.rename_df_cols(df_cond) # In each cell, maps which ion channels feed the ion pools.
 
         #### ion to conductance
         start_row_ion = 2 + df_temp.index[df_temp.iloc[:, 25] == "Ion to conductance"][0]
-        df_ion = pd.read_excel(self.xls, sheet_name="Neu", header=start_row_ion, index_col=0, nrows=self.nrows, usecols="Z:BB")
+        df_ion = pd.read_excel(xls, sheet_name="Neu", header=start_row_ion, index_col=0, nrows=self.nrows, usecols="Z:BB")
         self.ion_to_cond_data = self.rename_df_cols(df_ion) # In each cell, determines which ion channels are regulated by ion pools (e.g. Kcas).
 
         #### initial voltage
         start_row_v0 = 2 + df_temp.index[df_temp.iloc[:, 55] == "Initial voltage"][0]
-        df_v0 = pd.read_excel(self.xls, sheet_name="Neu", header=start_row_v0, index_col=0, nrows=self.nrows, usecols="BD:BE")
+        df_v0 = pd.read_excel(xls, sheet_name="Neu", header=start_row_v0, index_col=0, nrows=self.nrows, usecols="BD:BE")
         self.initial_voltage_data = df_v0.copy() # Reads initial voltages of each cell.
         
         #### cs_g
-        df_csg = pd.read_excel(self.xls, 'cs_g', header=1, index_col=0, nrows=self.nrows*2, usecols=self.usecols_neurons)
+        df_csg = pd.read_excel(xls, 'cs_g', header=1, index_col=0, nrows=self.nrows*2, usecols=self.usecols_neurons)
         df_csg.index = pd.Series(df_csg.index).ffill()
         self.csg = {"fast": {}, "slow": {}} # This one is complicated. Reads in the conductances from the CS matrix.
         for i, (presyn, row) in enumerate(df_csg.iterrows()):
@@ -85,7 +85,7 @@ class ControlReader:
                     self.csg["slow"].setdefault(presyn, {})[postsyn] = val
         
         #### cs_e
-        df_cse = pd.read_excel(self.xls, 'cs_E', header=1, index_col=0, nrows=self.nrows*2, usecols=self.usecols_neurons)
+        df_cse = pd.read_excel(xls, 'cs_E', header=1, index_col=0, nrows=self.nrows*2, usecols=self.usecols_neurons)
         df_cse.index = pd.Series(df_cse.index).ffill()
         self.cse = {"fast": {}, "slow": {}} # Reads reversal potentials of the CS matrix.
         for i, (presyn, row) in enumerate(df_cse.iterrows()):
@@ -96,7 +96,7 @@ class ControlReader:
                     self.cse["slow"].setdefault(presyn, {})[postsyn] = val
         
         #### cs_fat
-        df_csfat_nums = pd.read_excel(self.xls, 'cs_FAT', header=1, index_col=0, nrows=self.nrows*2, usecols=self.usecols_neurons)
+        df_csfat_nums = pd.read_excel(xls, 'cs_FAT', header=1, index_col=0, nrows=self.nrows*2, usecols=self.usecols_neurons)
         df_csfat_nums.index = pd.Series(df_csfat_nums.index).ffill()
         self.csfat_nums = {"fast": {}, "slow": {}} # Reads in the number corresponding to the type of chemical synapse.
         for i, (presyn, row) in enumerate(df_csfat_nums.iterrows()):
@@ -107,7 +107,7 @@ class ControlReader:
                 else:
                     self.csfat_nums["slow"].setdefault(presyn, {})[postsyn] = val
 
-        df_csfat_params = pd.read_excel(self.xls, sheet_name='cs_FAT', index_col=25, header=[0,1])
+        df_csfat_params = pd.read_excel(xls, sheet_name='cs_FAT', index_col=25, header=[0,1])
         df_csfat_params = df_csfat_params.iloc[:, 25:35]
         self.csfat_params_fast = {} # Fills in the parameter values according to the number from csfat_nums. Distinguishes fast and slow
         self.csfat_params_slow = {}
@@ -121,14 +121,14 @@ class ControlReader:
                 self.csfat_params_slow.setdefault(presyn, {})[postsyn] = df_csfat_params.loc[num]
         
         #### es
-        df_esg = pd.read_excel(self.xls, 'es', header=1, index_col=0, nrows=self.nrows*2, usecols=self.usecols_neurons)
+        df_esg = pd.read_excel(xls, 'es', header=1, index_col=0, nrows=self.nrows*2, usecols=self.usecols_neurons)
         df_esg.index = pd.Series(df_esg.index).ffill()
         self.esg_data = df_esg.copy() # Reads conductances for electrical synapses
         
         #### current injection
-        df_temp = pd.read_excel(self.xls, f"{self.sim_name}.smu")
+        df_temp = pd.read_excel(xls, f"{self.sim_name}.smu")
         start_row_clamp = 2 + df_temp.index[df_temp.iloc[:, 1] == "Current injection"][0]
-        df_clamps = pd.read_excel(self.xls, sheet_name=f"{self.sim_name}.smu", header=start_row_clamp, index_col=0, usecols="B:E")
+        df_clamps = pd.read_excel(xls, sheet_name=f"{self.sim_name}.smu", header=start_row_clamp, index_col=0, usecols="B:E")
         self.iclamp_data = df_clamps.copy() # Reads in IClamp data based on the sim_name.
 
         
