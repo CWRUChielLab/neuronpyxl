@@ -1,6 +1,6 @@
 # neuronpyxl
 
-*A tool to run SNNAP-based models from a spreadsheet interface using the NEURON simulator via Python*
+*A tool to run SNNAP-based models from a spreadsheet interface using the NEURON simulator via Python* \
 Authors: Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
 ## Installing NEURON
@@ -31,33 +31,35 @@ If needed, see this [video](https://www.youtube.com/watch?v=jWjiPWG3DKY) for a w
 
 Clone this repository or download the Zip files and extract them to a folder. The code can be run with pip or Anaconda.
 
-If you are using Anaconda (recommended in Windows), create the environment and install the package with `conda env create -f environment.yml`. Activate the environment with `conda activate neuronpyxl-env`.
+If you are using Anaconda (recommended in Windows), create the environment and install the package with \
+`conda env create -f environment.yml`.\
+Activate the environment with \
+`conda activate neuronpyxl-env`.
 
-If you are using pip, [create a virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/). Make sure the environment uses Python 3.10. Activate the environment, then run `python setup.py install --user`
+If you are using pip, [create a virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/). Make sure the environment uses Python 3.10. Activate the environment, then run \
+`python setup.py install --user`
 
 ## Usage
 
 neuronpyxl simulations must be run using the Excel spreadsheet. A blank spreadsheet is provided in the Excel_files folder. Once the parameters in the spreadsheet are entered, you must compile the mod files corresponding to that simulation. You only need to do this once per model -- simply changing parameter values or adding/removing synapses and cells does not require recompiling. You only need to recompile when adding ion pools or new ion channels.
 
-To compile the mod files, run
+To compile the mod files, run \
 `python3 -m neuronpyxl.cmd_util -f gen_mods --file path/to/excel_file.xlsx`
 
-To run a simulation, run
+To run a simulation, run \
 `python3 -m neuronpyxl.cmd_util -f run_sim --file path/to/excel_file.xlsx --name simname --duration simdur`
 
-This saves your data into one or more HDF5 files located in Data/simname_data/.
+This saves your data into one or more HDF5 files located in "Data/simname_data/". There are other parameters to further customize your simulation.
 
-There are other parameters to further customize your simulation.
-
-- --file filename: path to Excel file to run.
-- --name simname: the simulation from the spreadsheet you want to run (simname.smu)
-- --duration dur: runs simulation for dur ms.
-- --noise freq weight tau: noise parameters. freq in Hz, weight in uS, tau in ms. If not provided, noise will not be included.
-- --teq t: simulation runs for an additional t ms to relax dynamical variables to their steady states. Default is 1000.
-- --method m: specify integration method (m=1 for  Backwards-Euler, m=2 for Crank-Nicholson). Default is 2.
-- --atol: absolute error tolerance for the simulation. Default is 1e-5.
-- --step dt: if provided, runs simulation at constant time step dt (ms). Otherwise, integrates at variable timestep (recommended)
-- --interp dt: if provided, interpolates data to constant timestep dt (ms) using cubic spline interpolation.
+- --file *filename*: *filename* of Excel file to run.
+- --name *simname*: the simulation from the spreadsheet you want to run (*simname*.smu)
+- --duration *dur*: runs simulation for *dur* ms.
+- --noise *freq weight tau*: noise parameters. *freq* in Hz, *weight* in uS, *tau* in ms. If not provided, noise will not be included.
+- --teq *dur*: simulation runs for an additional *dur* ms to relax dynamical variables to their steady states. Default is 1000.
+- --method *m*: specify integration method (*m*=1 for  Backwards-Euler, *m*=2 for Crank-Nicholson). Default is 2.
+- --atol *a*: absolute error tolerance *a* for the simulation. Default is 1e-5.
+- --step *dt*: if provided, runs simulation at constant time step *dt* (ms). Otherwise, integrates at variable timestep (recommended)
+- --interp *dt*: if provided, interpolates data to constant timestep *dt* (ms) using cubic spline interpolation.
 - --syn: no arguments. If provided, records electrical and chemical synaptic currents.
 - --vonly: no arguments. If provided, only records membrane voltages and time and saves to a single file. Otherwise, each cell's data is recorded into its own folder.
 - --cluster: no arguments. Doesn't prompt user for clearing data folders. useful if running on a HPC cluster.

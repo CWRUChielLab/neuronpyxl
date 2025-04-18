@@ -135,13 +135,10 @@ class ModBuilder:
         """
         if os.path.exists(dir_path):
             # Directory exists, empty it
-            if cluster:
-                del_dir = True
-            else:
-                del_dir = input(f"Clear out contents of {dir_path}? (y/n) ") == "y"
+            del_dir = True if cluster else input(f"Clear out contents of {dir_path}? (y/n) ") == "y"
             if not del_dir:
                 sys.exit()
-            shutil.rmtree(dir_path)  # Remove the directory and its contents
+            shutil.rmtree(dir_path,ignore_errors=True)  # Remove the directory and its contents
             os.makedirs(dir_path)    # Recreate the empty directory
         else:
             # Directory does not exist, create it

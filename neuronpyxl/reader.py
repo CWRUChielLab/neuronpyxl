@@ -130,6 +130,7 @@ class ControlReader:
         start_row_clamp = 2 + df_temp.index[df_temp.iloc[:, 1] == "Current injection"][0]
         df_clamps = pd.read_excel(xls, sheet_name=f"{self.sim_name}.smu", header=start_row_clamp, index_col=0, usecols="B:E")
         self.iclamp_data = df_clamps.copy() # Reads in IClamp data based on the sim_name.
+        xls.close()
 
         
     def rename_df_cols(self, df):

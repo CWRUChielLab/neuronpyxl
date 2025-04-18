@@ -72,29 +72,12 @@ def gen_mods(file, cluster):
     mb.run(cluster)
     subprocess.run("nrnivmodl mod", shell=True, check=True)
 
-def removetree(tgt):
-    def error_handler(func, path, execinfo):
-        e = execinfo[1]
-        if e.errno == errno.ENOENT or not os.path.exists(path):
-            return              # path does not exist - treat as success
-        if func in (os.rmdir, os.remove) and e.errno == errno.EACCES:
-            os.chmod(path, stat.S_IRWXU| stat.S_IRWXG| stat.S_IRWXO) # 0777
-            func(path)          # read-only file; make writable and retry
-        raise e
-    tmp = os.path.join(os.path.dirname(tgt),"_removetree_tmp")
-    os.rename(tgt, tmp)
-    shutil.rmtree(tmp, onerror=error_handler)
-    return
-
 
 # Function to clear data directory before populating it
 def clear_dir(dir_path, cluster):
     if os.path.exists(dir_path):
         # Directory exists, empty it
-        if cluster:
-            del_dir = True
-        else:
-            del_dir = input(f"Clear out contents of {dir_path}? (y/n) ") == "y"
+        del_dir = True if cluster else input(f"Clear out contents of {dir_path}? (y/n) ") == "y"
         if not del_dir:
             sys.exit()
         shutil.rmtree(dir_path,ignore_errors=True)
