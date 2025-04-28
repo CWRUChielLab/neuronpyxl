@@ -87,7 +87,10 @@ class NetworkBuilder:
         self.interp = 0.005
         self.v0 = {}
         self.eq_time = eq_time
-        self.noise_eq_time = 1000
+        if noise is not None:
+            self.noise_eq_time = 1000
+        else:
+            self.noise_eq_time = 0
         self.simdur = simdur
         self.temp = 6.3
         self.record_synaptic_currents = False
@@ -521,7 +524,8 @@ class NetworkBuilder:
         """
         assert name in self.cells, f"Cell name '{name}' not found in cells dict"
         assert 0.0 <= loc <= 1.0, f"loc '{loc}' must be between 0.0 and 1.0, inclusive"
-        ic = self.cells[name].iclamp(delay+self.eq_time+self.noise_eq_time, dur, amp, loc)
+        delaytime = delay+self.eq_time+self.noise_eq_time if delay is not None else None
+        ic = self.cells[name].iclamp(delaytime, dur, amp, loc)
         self.current_clamps.setdefault(name, {})
         if loc in self.current_clamps[name]:
             self.current_clamps[name][loc].append(ic)
@@ -657,23 +661,23 @@ class NetworkBuilder:
             self.record_all(all_locs=all_locs, at_locs=at_locs)
     
     
-    def setup_run(self, all_locs:bool=False, voltage_only:bool=False, at_locs=[0.5]):
+    def setup_run(self, record_none:bool=False,all_locs:bool=False, voltage_only:bool=False, at_locs=[0.5]):
         if self.dt > 0:
             h.dt = self.dt
-        # if not self.ran_before:
-        self.record(voltage_only, all_locs=all_locs, at_locs=at_locs) 
-        
+        else:
+            h.cvode.active(True)
+            h.cvode.atol(self.atol)
         for name, c in self.cells.items():
             for seg in c.section:
                 seg.v = self.v0[name]
-        if self.secondorder == 2:
-            h.cvode.active(True)
-            h.cvode.atol(self.atol)
         h.celsius = self.temp
         h.secondorder = self.secondorder
+        # if not self.ran_before:
+        if not record_none:
+            self.record(voltage_only, all_locs=all_locs, at_locs=at_locs) 
         
     
-    def run(self, all_locs=False, at_locs=[0.5], voltage_only=False):
+    def run(self, all_locs=False, at_locs=[0.5],voltage_only=False,record_none=False):
         """_summary_
 
         Args:
@@ -681,7 +685,7 @@ class NetworkBuilder:
             at_locs (List[float], optional): Provide the locations on the segment to record in every cell. Will error if a location is not on the segment. Defaults to [0.5].
             all_locs (boolean, optional): If true, will record data at every location in the segment in every cell and ignores at_locs argument. Defaults to False.
         """
-        self.setup_run(all_locs, voltage_only, at_locs)
+        self.setup_run(record_none=record_none,voltage_only=voltage_only,all_locs=all_locs, at_locs=at_locs)
         print("Running simulation...")
         start_time = time.time()
         h.finitialize()

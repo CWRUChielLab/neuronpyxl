@@ -209,7 +209,7 @@ class Cell:
                 if isinstance(v, dict):
                     items.update(flatten_dict(v, new_key, sep=sep))
                 else:
-                    items[new_key.replace("pysnnap_", "")] = v.as_numpy()
+                    items[new_key.replace("neuronpyxl_", "")] = v.as_numpy()
             return items
         return flatten_dict(self.recording[loc])
 

@@ -12,3 +12,5 @@ debug.py
 multirun_test.py
 *.png
 *.jpg
+Examples/
+paper2.xlsx
