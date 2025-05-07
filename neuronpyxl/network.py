@@ -662,14 +662,14 @@ class NetworkBuilder:
     
     
     def setup_run(self, record_none:bool=False,all_locs:bool=False, voltage_only:bool=False, at_locs=[0.5]):
+        for name, c in self.cells.items():
+            for seg in c.section:
+                seg.v = self.v0[name]
         if self.dt > 0:
             h.dt = self.dt
         else:
             h.cvode.active(True)
             h.cvode.atol(self.atol)
-        for name, c in self.cells.items():
-            for seg in c.section:
-                seg.v = self.v0[name]
         h.celsius = self.temp
         h.secondorder = self.secondorder
         # if not self.ran_before:
@@ -784,7 +784,7 @@ class NetworkBuilder:
                     cell_data[f"{clamp_type}_applied_{loc}"] = np.sum([r.as_numpy() for r in clamp_recording[loc]], axis=0)
         for k in cell_data.keys():
             cell_data[k] = cell_data[k][indices]  # Modify dictionary in-place
-        cell_data["t"] -= cell_data["t"][0]
+        cell_data["t"] -= self.eq_time + self.noise_eq_time
         return copy.deepcopy(cell_data)
             
     
@@ -799,15 +799,24 @@ class NetworkBuilder:
         Returns:
             dict: dictionary of all of the interpolated data
         """
+        # cell_data = self.get_cell_data(name, loc)
+        # t = cell_data["t"]
+        # tu, ind = np.unique(t, return_index=True)  # get indices of unique times in case of duplicates
+        # cell_interp = {"t": tvec}
+        # for k, v in cell_data.items():
+        #     if k != "t":
+        #         # cell_interp[k] = np.interp(tvec, t, v)
+        #         vu = v[ind]
+        #         cs = CubicSpline(tu,vu)
+        #         cell_interp[k] = cs(tvec)
         cell_data = self.get_cell_data(name, loc)
         t = cell_data["t"]
-        tu, ind = np.unique(t, return_index=True)  # get indices of unique times in case of duplicates
+        # tu, ind = np.unique(t, return_index=True)  # get indices of unique times in case of duplicates
         cell_interp = {"t": tvec}
         for k, v in cell_data.items():
             if k != "t":
                 # cell_interp[k] = np.interp(tvec, t, v)
-                vu = v[ind]
-                cs = CubicSpline(tu,vu)
+                cs = CubicSpline(t,v)
                 cell_interp[k] = cs(tvec)
                 
         return cell_interp

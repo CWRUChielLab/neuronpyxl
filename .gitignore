@@ -7,7 +7,7 @@ test*
 *.egg-info
 *.out
 sim_log.txt
-results.csv
+*.csv
 debug.py
 multirun_test.py
 *.png
@@ -15,3 +15,4 @@ multirun_test.py
 Examples/
 paper2.xlsx
 meandur.py
+figs/
