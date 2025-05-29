@@ -38,7 +38,7 @@ from typing import Tuple
 import warnings
 
 class NetworkBuilder:
-    def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float, eq_time: float, simdur:float, seed:int):
+    def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float, eq_time: float, simdur:float, seed:bool):
         """_summary_
 
         Args:
@@ -128,8 +128,6 @@ class NetworkBuilder:
         self.set_up_v0_from_reader()
         if self.noise is not None:
             self.add_noise()
-            if self.seed > 0:
-                self.set_seed(self.seed)
         self.add_iclamps_from_reader()
 
     
@@ -509,12 +507,23 @@ class NetworkBuilder:
                 {"netstim": ns1, "syn": syn1, "netcon": nc1},
                 {"netstim": ns2, "syn": syn2, "netcon": nc2}
             )
+        
+        self.set_seed()
     
     
-    def set_seed(self,seed):
-        for _, (d1,d2) in self.noise_cons.items():
-            d1["netstim"].seed(seed)
-            d2["netstim"].seed(seed)
+    def set_seed(self):
+        num_seeds = 2 * len(self.cells)  # 2 seeds per NetStim, 2 NetStims per cell
+        if self.seed:
+            seeds = np.arange(1, num_seeds+1,dtype=int)
+        else:
+            seeds = np.random.choice(np.arange(1, 1000,dtype=int), size=num_seeds, replace=False)
+        seeds = seeds.reshape(2, len(self.cells))        
+
+        for i, ((_, (d1, d2))) in enumerate(self.noise_cons.items()):
+            seed1 = seeds[0, i]
+            seed2 = seeds[1, i]
+            d1["netstim"].seed(seed1)
+            d2["netstim"].seed(seed2)
     
     
     def attach_iclamp(self, name: str, loc=0.5, delay=None, dur=None, amp=None):

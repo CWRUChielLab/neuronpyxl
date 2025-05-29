@@ -35,21 +35,41 @@ cwd = os.getcwd() # Get current working directory in which to create files.
 ###################################################################
 # Set up command line arguments
 parser = argparse.ArgumentParser(description="Process NEURON simulation arguments.")
-parser.add_argument('-f', required=True, type=str, choices=['gen_mods', 'run_sim'], help="Function to run. The options are 'gen_mods' or 'run_sim'.")
-parser.add_argument('--file', required=True, type=str, help="File name of the control excel sheet describing the simulation.")
-parser.add_argument('--name', type=str, help="Name of the simulation.")
-parser.add_argument('--folder', type=str, help="Folder name to save data to.")
-parser.add_argument('--duration', type=float, default=10000.0, help="Duration of the simulations in ms. Default is 30000.")
-parser.add_argument('--noise', type=float, nargs=3, default=None, help="Noise parameters for an Exponential Synapse noise model. noise[0] = rate (Hz), noise[1] = weight (nS), noise[2] = tau (ms).")
-parser.add_argument('--seed', type=int, default=-1, help="Sets the seed for all of the NetStims so that simulations are deterministic.")
-parser.add_argument('--method', type=int, choices=[1, 2], default=2, help="Method of integration. 1 for Backwards Euler and 2 for Crank-Nicholson (default).")
-parser.add_argument('--step', type=float, default=-1., help="Time step of the integration in ms. If not provided, will default to variable timestep Crank-Nicholson.")
-parser.add_argument('--atol', type=float, default=1e-5, help="Absolute error tolerance of integration. Default is 1e-5.")
-parser.add_argument('--interp', type=float, default=-1., help="Linear interpolate to constant size time step provided (in ms) (exclusive of 0 and inclusive of duration to match SNNAP's output). If not provided, will return the variable timestepped data.")
-parser.add_argument('--syn', action='store_true', help="If --syn is entered, will record synaptic currents if they are available.")
-parser.add_argument('--vonly', action='store_true', help="If --vonly is entered, will only record membrane potentials of each cell and the time. If both --syn and --vonly are passed, will default to --vonly.")
-parser.add_argument('--teq', type=float, default=1000.0, help="Sets equilibration time to provided value. Defaults to 1000.0 ms.")
-parser.add_argument('--cluster', action='store_true', help="If running on a cluster, will automatically generate the files without user input. Defaults to False.")
+parser.add_argument('-f', required=True, type=str, choices=['gen_mods', 'run_sim'],
+                    help="Function to run. The options are 'gen_mods' or 'run_sim'.")
+parser.add_argument('--file', required=True, type=str,
+                    help="File name of the control excel sheet describing the simulation.")
+parser.add_argument('--name', type=str,
+                    help="Name of the simulation.")
+parser.add_argument('--folder', type=str,
+                    help="Folder name to save data to.")
+parser.add_argument('--duration', type=float, default=10000.0,
+                    help="Duration of the simulations in ms. Default is 30000.")
+parser.add_argument('--noise', type=float, nargs=3, default=None,
+                    help="Noise parameters for an Exponential Synapse noise model.\
+                    noise[0] = rate (Hz), noise[1] = weight (nS), noise[2] = tau (ms).")
+parser.add_argument('--seed', action='store_true',
+                    help="Sets a seed for all of the NetStims so that simulations are deterministic.\
+                    If not provided, chooses a different random seed for each stim. In both cases, the NetStims are independent.")
+parser.add_argument('--method', type=int, choices=[1, 2], default=2,
+                    help="Method of integration. 1 for Backwards Euler and 2 for Crank-Nicholson (default).")
+parser.add_argument('--step', type=float, default=-1.,
+                    help="Time step of the integration in ms. If not provided, will default to variable timestep Crank-Nicholson.")
+parser.add_argument('--atol', type=float, default=1e-5,
+                    help="Absolute error tolerance of integration. Default is 1e-5.")
+parser.add_argument('--interp', type=float, default=-1.,
+                    help="Linear interpolate to constant size time step provided (in ms)\
+                        (exclusive of 0 and inclusive of duration to match SNNAP's output).\
+                            If not provided, will return the variable timestepped data.")
+parser.add_argument('--syn', action='store_true',
+                    help="If --syn is entered, will record synaptic currents if they are available.")
+parser.add_argument('--vonly', action='store_true',
+                    help="If --vonly is entered, will only record membrane potentials of each cell and the time.\
+                          If both --syn and --vonly are passed, will default to --vonly.")
+parser.add_argument('--teq', type=float, default=1000.0,
+                    help="Sets equilibration time to provided value. Defaults to 1000.0 ms.")
+parser.add_argument('--cluster', action='store_true',
+                    help="If running on a cluster, will automatically generate the files without user input. Defaults to False.")
 args = parser.parse_args()
 
 ###################################################################
@@ -87,7 +107,7 @@ def clear_dir(dir_path, cluster):
 
 def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:float=10000.,
             method:int=2, atol:float=1e-5, interp:float=-1, syn:bool=False, vonly:bool=False,
-            noise:tuple=None, teq:float=1000.0, cluster:bool=False,seed:int=-1):
+            noise:tuple=None, teq:float=1000.0, cluster:bool=False,seed:bool=False):
     """Runs a simulation from the provided file and simulation name (before .smu in Excel), provided that the mod files are properly compiled.
 
     Args:
