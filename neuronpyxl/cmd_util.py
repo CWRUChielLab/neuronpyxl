@@ -30,8 +30,6 @@ import numpy as np
 import pandas as pd
 import shutil
 import sys
-import errno
-import stat
 cwd = os.getcwd() # Get current working directory in which to create files.
 
 ###################################################################
@@ -43,6 +41,7 @@ parser.add_argument('--name', type=str, help="Name of the simulation.")
 parser.add_argument('--folder', type=str, help="Folder name to save data to.")
 parser.add_argument('--duration', type=float, default=10000.0, help="Duration of the simulations in ms. Default is 30000.")
 parser.add_argument('--noise', type=float, nargs=3, default=None, help="Noise parameters for an Exponential Synapse noise model. noise[0] = rate (Hz), noise[1] = weight (nS), noise[2] = tau (ms).")
+parser.add_argument('--seed', type=int, default=-1, help="Sets the seed for all of the NetStims so that simulations are deterministic.")
 parser.add_argument('--method', type=int, choices=[1, 2], default=2, help="Method of integration. 1 for Backwards Euler and 2 for Crank-Nicholson (default).")
 parser.add_argument('--step', type=float, default=-1., help="Time step of the integration in ms. If not provided, will default to variable timestep Crank-Nicholson.")
 parser.add_argument('--atol', type=float, default=1e-5, help="Absolute error tolerance of integration. Default is 1e-5.")
@@ -86,7 +85,9 @@ def clear_dir(dir_path, cluster):
         # Directory does not exist, create it
         os.makedirs(dir_path)
 
-def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:float=10000., method:int=2, atol:float=1e-5, interp:float=-1, syn:bool=False, vonly:bool=False, noise:tuple=None, teq:float=1000.0, cluster:bool=False):
+def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:float=10000.,
+            method:int=2, atol:float=1e-5, interp:float=-1, syn:bool=False, vonly:bool=False,
+            noise:tuple=None, teq:float=1000.0, cluster:bool=False,seed:int=-1):
     """Runs a simulation from the provided file and simulation name (before .smu in Excel), provided that the mod files are properly compiled.
 
     Args:
@@ -109,7 +110,8 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
     assert 0 < atol < 1, f"atol={atol} is not a valid error tolerance. Must be between 0 and 1."
     
     # Set up and run simulation but setting object parameters to correct values
-    nb = network.NetworkBuilder(params_file=file, sim_name=name, noise=noise, dt=step, atol=atol, integrator=method, eq_time=teq, simdur=duration)
+    nb = network.NetworkBuilder(params_file=file, sim_name=name, noise=noise, dt=step, atol=atol,
+                                integrator=method, eq_time=teq, simdur=duration, seed=seed)
     if syn and not vonly:
         nb.record_synaptic_currents = True
         
@@ -166,4 +168,18 @@ if __name__ == "__main__":
     if func == "gen_mods":
         gen_mods(args.file, args.cluster)
     elif func == "run_sim":
-        run_sim(name=args.name, file=args.file, folder=args.folder, duration=args.duration, step=args.step, method=args.method, atol=args.atol, interp=args.interp, syn=args.syn, vonly=args.vonly, noise=args.noise, teq=args.teq, cluster=args.cluster)
+        run_sim(name=args.name,
+                file=args.file,
+                folder=args.folder,
+                duration=args.duration,
+                step=args.step,
+                method=args.method,
+                atol=args.atol,
+                interp=args.interp,
+                syn=args.syn,
+                vonly=args.vonly,
+                noise=args.noise,
+                teq=args.teq,
+                cluster=args.cluster,
+                seed=args.seed
+                )

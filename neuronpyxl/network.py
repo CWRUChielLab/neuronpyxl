@@ -38,7 +38,7 @@ from typing import Tuple
 import warnings
 
 class NetworkBuilder:
-    def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float, eq_time: float, simdur:float):
+    def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float, eq_time: float, simdur:float, seed:int):
         """_summary_
 
         Args:
@@ -65,7 +65,7 @@ class NetworkBuilder:
         else:
             self.noise = None
         self.noise_cons = {}
-        
+        self.seed = seed
         # There can be multiple clamps at the same location. This may be deprecated at some point, because this model uses 0.5 as the default and only location.
         self.current_clamps = {} # Dict[cell name -> Dict[location -> List[IClamp]]]
         self.voltage_clamps = {} # Dict[cell name -> Dict[location -> List[VClamp]]
@@ -128,6 +128,8 @@ class NetworkBuilder:
         self.set_up_v0_from_reader()
         if self.noise is not None:
             self.add_noise()
+            if self.seed > 0:
+                self.set_seed(self.seed)
         self.add_iclamps_from_reader()
 
     
@@ -507,6 +509,12 @@ class NetworkBuilder:
                 {"netstim": ns1, "syn": syn1, "netcon": nc1},
                 {"netstim": ns2, "syn": syn2, "netcon": nc2}
             )
+    
+    
+    def set_seed(self,seed):
+        for _, (d1,d2) in self.noise_cons.items():
+            d1["netstim"].seed(seed)
+            d2["netstim"].seed(seed)
     
     
     def attach_iclamp(self, name: str, loc=0.5, delay=None, dur=None, amp=None):

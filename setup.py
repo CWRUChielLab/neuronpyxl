@@ -19,7 +19,7 @@ setup(
     author="Uri Dickman",
     description="neuronpyxl provides an Excel spreadsheet interface bulit into Python to run SNNAP-based models via the NEURON simulator.",
     license="GNU General Public License v3.0",
-    python_requires="==3.10",  # Python 3.10 is required because some packages are not fully up to date with Python releases
+    python_requires="==3.10.12",  # Python 3.10 is required because some packages are not fully up to date with Python releases
     install_requires=reqs,
     py_modules=MODULES,
     packages=find_packages(),
