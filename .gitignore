@@ -20,3 +20,4 @@ figs/
 .mypy_cache/
 save_noisy_data.py
 plot_curtis.py
+*.sh
