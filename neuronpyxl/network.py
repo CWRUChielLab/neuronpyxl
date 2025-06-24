@@ -230,37 +230,36 @@ class NetworkBuilder:
         df = self.reader.cond_to_ion_data
         df = df[df.index != 0]
         df = df.dropna(axis=1, how="all")
-        df = df.dropna(axis=0)
+        df = df.dropna(axis=0,how="all")
         if df.empty:
             return
         # Populate an empty dictionary for according to the data in the spreadsheet
+
         for name, row in df.iterrows():
             pools_data = self.reader.ion_pools_data.loc[name]
             pools_data = pools_data[pools_data.index != 0]
             pools = {}
-            if not pd.isna(pools_data["ion"]):
-                pool = pools_data["ion"].lower().strip()
-                if pool not in pools:
-                    pools[pool] = {"k1": pools_data["K1"], "k2": pools_data["K2"]}
-            if not pd.isna(pools_data["ion_1"]):
-                pool = pools_data["ion_1"].lower().strip()
-                if pool not in pools:
-                    pools[pool] = {"k1": pools_data["K1_1"], "k2": pools_data["K2_1"]}
-            if not pd.isna(pools_data["ion_2"]):
-                pool = pools_data[pool].lower().strip()
-                if pool not in pools:
-                    pools[pool] = {"k1": pools_data["K1_2"], "k2": pools_data["K2_2"]}
+            for ion_key, k1_key, k2_key in \
+                    [("ion", "K1", "K2"), ("ion_1", "K1_1", "K2_1"), ("ion_2", "K1_2", "K2_2")]:
+                ion_value = pools_data[ion_key]
+                if isinstance(ion_value, str):
+                    pool = ion_value.lower().strip()
+                    if pool not in pools:
+                        pools[pool] = {"k1": pools_data[k1_key], "k2": pools_data[k2_key]}
             cell = self.cells[name] # Get the cell object
             ions = {}
+
             for i in range(0, 4):  # Loop over ch, ch_1, ch_2
                 ch_col = f"ch_{i}" if i > 0 else "ch"
                 ion_col = f"ion_{i}" if i > 0 else "ion"
                 if ch_col in df.columns and ion_col in df.columns:
-                    ch = row[ch_col].lower().strip()
-                    ion = row[ion_col].lower().strip()
-                    self.pools_active.setdefault(name, []).append(ion)
-                    ions.setdefault(ion, []).append(ch)
+                    if isinstance(row[ch_col],str) and isinstance(row[ion_col],str):
+                        ch = row[ch_col].lower().strip()
+                        ion = row[ion_col].lower().strip()
+                        self.pools_active.setdefault(name, set({})).add(ion)
+                        ions.setdefault(ion, []).append(ch)
             # Load the ion pool mechanisms into the cell
+            
             cell.load_mechanisms([f"{self.prefix}{ion}pool" for ion in self.pools_active[name]])
             for ion, l in ions.items():
                 for j, ch in enumerate(l):
@@ -474,6 +473,7 @@ class NetworkBuilder:
             return rate*simdur
         
         for name, cell in self.cells.items():
+            h.finitialize()
             e0 = cell.section(0.5).v
             
             num = spike_num(rate, self.simdur+self.noise_eq_time)
