@@ -204,6 +204,7 @@ class NetworkBuilder:
             mechs_with_prefix = [self.prefix + m for m in vdg_parameters.keys()] # Need to add "neuronpyxl_" before every mechanism (see mod files)
             c = cell.Cell(name=name, current_mechs=mechs_with_prefix, cm=cm) # create a cell, which inserts mechanisms into the cell
             # Set the parameter values of the mechanisms in this cell  based on the now-filled vdg_parameters dictionary
+            
             for mech, d in vdg_parameters.items():
                 for param, val in d.items():
                     setattr(c.section(0.5), f"{param}_{self.prefix}{mech}", val)
@@ -539,8 +540,11 @@ class NetworkBuilder:
         Returns:
             _type_: _description_
         """
-        assert name in self.cells, f"Cell name '{name}' not found in cells dict"
-        assert 0.0 <= loc <= 1.0, f"loc '{loc}' must be between 0.0 and 1.0, inclusive"
+        try:
+            assert name in self.cells, f"Cell name '{name}' not found in cells dict"
+            assert 0.0 <= loc <= 1.0, f"loc '{loc}' must be between 0.0 and 1.0, inclusive"
+        except AssertionError:
+            return h.IClamp()
         delaytime = delay+self.eq_time+self.noise_eq_time if delay is not None else None
         ic = self.cells[name].iclamp(delaytime, dur, amp, loc)
         self.current_clamps.setdefault(name, {})

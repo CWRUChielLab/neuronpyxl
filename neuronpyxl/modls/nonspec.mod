@@ -33,8 +33,8 @@ STATE {
 }
 
 INITIAL {
-    Astate = AnA
-    Bstate = BnB
+    Astate = 0.0
+    Bstate = 0.0
     BR = 0.0
 }
 
@@ -156,11 +156,11 @@ FUNCTION dB (numtaus) (/ms) {
 }
 
 FUNCTION Ainf(v) () {
-    Ainf = 1/pow((1+exp((hA-v)/sA)), pA)
+    Ainf = (1-AnA)/pow((1+exp((hA-v)/sA)), pA) + AnA
 }
 
 FUNCTION Binf(v) () {
-    Binf = 1/pow((1+exp((v-hB)/sB)), pB)
+    Binf = (1-BnB)/pow((1+exp((v-hB)/sB)), pB) + BnB
 }
 
 FUNCTION tA_1tau(tmin, tmax) (ms) {
