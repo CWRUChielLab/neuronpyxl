@@ -682,7 +682,8 @@ class NetworkBuilder:
             self.record_all(all_locs=all_locs, at_locs=at_locs)
     
     
-    def setup_run(self, record_none:bool=False,all_locs:bool=False, voltage_only:bool=False, at_locs=[0.5]):
+    def setup_run(self, record_none:bool=False,all_locs:bool=False,\
+                    voltage_only:bool=False, at_locs=[0.5]):
         for name, c in self.cells.items():
             for seg in c.section:
                 seg.v = self.v0[name]
@@ -715,7 +716,7 @@ class NetworkBuilder:
         self.simtime = end_time - start_time
         self.ran_before = True
 
-     
+
     def reset_recordings(self):
         """Deprecated
         """
@@ -878,6 +879,20 @@ class NetworkBuilder:
         else:
             elec_interp = None
         return chem_interp, elec_interp
+
+    
+    def save_state(self,filename:str="state.bin"):
+        ss = h.SaveState()
+        ss.save()
+        sf = h.File(filename)
+        ss.fwrite(sf)
+
+    def restore_state(self,filename:str):
+        ss = h.SaveState()
+        sf = h.File(filename)
+        ss.fread(sf)
+        ss.restore(1)
+        sf.close()
 
 
     def generate_metadata(self,voltage_only,folder):
