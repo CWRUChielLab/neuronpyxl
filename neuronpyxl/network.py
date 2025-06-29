@@ -891,9 +891,7 @@ class NetworkBuilder:
         ss = h.SaveState()
         sf = h.File(filename)
         ss.fread(sf)
-        ss.restore(1)
-        sf.close()
-
+        ss.restore()
 
     def generate_metadata(self,voltage_only,folder):
         """Interpolate metadata and information regarding the simulation. Includes NEURON runtime, storage location, integration method, tiemstep and more.
