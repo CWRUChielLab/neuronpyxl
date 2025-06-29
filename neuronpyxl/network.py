@@ -587,16 +587,28 @@ class NetworkBuilder:
 
 
     def set_mech_parameter(self, name: str, param: str, val: float) -> None:
-        setattr(self.cells[name], f"{param}", val)
+        setattr(self.cells[name].section(0.5), f"{param}", val)
     
     
     def set_cs_parameter(self, pre: str, post: str, cstype: str, param: str, val: float) -> None:
         setattr(self.chemical_synapses[cstype][pre][post]["synapse"], param, val)
     
     
-    def set_es_parameter(self, pre: str, post: str, param: str, val: float) -> None:
+    def set_es_parameter(self, pre: str, post: str, param: str, val:float) -> None:
         setattr(self.electrical_synapses[pre][post], param, val)
     
+
+    def get_mech_parameter(self, name: str, param: str) -> float:
+        getattr(self.cells[name].section(0.5), f"{param}")
+    
+    
+    def get_cs_parameter(self, pre: str, post: str, cstype: str, param: str) -> float:
+        getattr(self.chemical_synapses[cstype][pre][post]["synapse"], param)
+    
+    
+    def get_es_parameter(self, pre: str, post: str, param: str) -> float:
+        getattr(self.electrical_synapses[pre][post], param)
+
     
     def record_voltage_only(self):
         self.voltage_only = True
