@@ -29,15 +29,15 @@ If needed, see this [video](https://www.youtube.com/watch?v=jWjiPWG3DKY) for a w
 
 ## Installing neuronpyxl
 
-Clone this repository or download the Zip files and extract them to a folder. The code can be run with pip or Anaconda.
+Clone this repository or download the Zip files and extract them to a folder. The code can be run with pip, Anaconda, or Mamba.
 
 If you are using Anaconda (recommended in Windows), create the environment and install the package with \
 `conda env create -f environment.yml`.\
 Activate the environment with \
 `conda activate neuronpyxl-env`.
 
-If you are using pip, [create a virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/). Make sure the environment uses Python 3.10. Activate the environment, then run \
-`python setup.py install --user`
+If you are using pip, [create a virtual environment](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/). Make sure the environment uses Python >= 3.10. Activate the environment, then run \
+`python -m pip install -e .`
 
 ## Usage
 
@@ -63,5 +63,6 @@ This saves your data into one or more HDF5 files located in "Data/simname_data/"
 - --syn: no arguments. If provided, records electrical and chemical synaptic currents.
 - --vonly: no arguments. If provided, only records membrane voltages and time and saves to a single file. Otherwise, each cell's data is recorded into its own folder.
 - --cluster: no arguments. Doesn't prompt user for clearing data folders. useful if running on a HPC cluster.
+- --folder *foldername*: If provided, saves into a folder with a custom name.
 
 See the Examples folder for how to read data and run simulations from Python.
