@@ -2,12 +2,12 @@ from setuptools import setup, find_packages
 
 # Requirements for use
 reqs = [
-    "numpy>=2.1.2",
-    "pandas>=2.2.3",
-    "XlsxWriter>=3.2.0",
+    "numpy>=2.3.1",
+    "pandas>=2.3.0",
+    "XlsxWriter>=3.2.5",
     "openpyxl>=3.1.5",
-    "tables>=3.10.1",
-    "scipy==1.15.1"
+    "tables>=3.10.2",
+    "scipy==1.16.0"
 ]
 
 # List of all modules involved with the project
@@ -19,7 +19,7 @@ setup(
     author="Uri Dickman",
     description="neuronpyxl provides an Excel spreadsheet interface bulit into Python to run SNNAP-based models via the NEURON simulator.",
     license="GNU General Public License v3.0",
-    python_requires="==3.10.12",  # Python 3.10 is required because some packages are not fully up to date with Python releases
+    python_requires=">=3.10",
     install_requires=reqs,
     py_modules=MODULES,
     packages=find_packages(),
