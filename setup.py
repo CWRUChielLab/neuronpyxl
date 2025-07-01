@@ -2,12 +2,12 @@ from setuptools import setup, find_packages
 
 # Requirements for use
 reqs = [
-    "numpy>=2.3.1",
-    "pandas>=2.3.0",
-    "XlsxWriter>=3.2.5",
+    "numpy>=2.2.1",
+    "pandas>=2.2.3",
+    "XlsxWriter>=3.2.0",
     "openpyxl>=3.1.5",
-    "tables>=3.10.2",
-    "scipy==1.16.0"
+    "tables>=3.10.1",
+    "scipy>=1.15.0"
 ]
 
 # List of all modules involved with the project
