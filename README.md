@@ -44,10 +44,10 @@ If you are using pip, [create a virtual environment](https://packaging.python.or
 neuronpyxl simulations must be run using the Excel spreadsheet. A blank spreadsheet is provided in the Excel_files folder. Once the parameters in the spreadsheet are entered, you must compile the mod files corresponding to that simulation. You only need to do this once per model -- simply changing parameter values or adding/removing synapses and cells does not require recompiling. You only need to recompile when adding ion pools or new ion channels.
 
 To compile the mod files, run \
-`python3 -m neuronpyxl.cmd_util -f gen_mods --file path/to/excel_file.xlsx`
+`neuronpyxl -f gen_mods --file path/to/excel_file.xlsx`
 
 To run a simulation, run \
-`python3 -m neuronpyxl.cmd_util -f run_sim --file path/to/excel_file.xlsx --name simname --duration simdur`
+`neuronpyxl -f run_sim --file path/to/excel_file.xlsx --name simname --duration simdur`
 
 This saves your data into one or more HDF5 files located in "Data/simname_data/". There are other parameters to further customize your simulation.
 

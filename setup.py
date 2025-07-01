@@ -23,5 +23,10 @@ setup(
     install_requires=reqs,
     py_modules=MODULES,
     packages=find_packages(),
+    entry_points={
+        'console_scripts': [
+            'neuronpyxl=neuronpyxl.cmd_util:main',
+        ],
+},
     package_data={"neuronpyxl": ["modls/*.mod"]}
 )
