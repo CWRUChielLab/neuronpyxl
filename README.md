@@ -17,7 +17,7 @@ Install Python according to your distribution. Create a [create a virtual enviro
 
 It is recommended to run neuronpyxl through Windows Subsystem for Linux (WSL). To install it, you can follow the instructions [here](https://nrn.readthedocs.io/en/8.2.6/install/install_instructions.html#windows-subsystem-for-linux-wsl-python-wheel). Once WSL is installed, run it and follow the Linux instructions for installing NEURON.
 
-Otherwise, install [Anaconda](https://www.anaconda.com/download), then [NEURON](https://github.com/neuronsimulator/nrn/releases/download/8.2.6/nrn-8.2.6.w64-mingw-py-38-39-310-311-312-setup.exe) 8.2.4 or greater onto your computer (note: NEURON 8.2.4 is compatible with Python 3.7-3.11, and NEURON 8.2.6 is compatible with 3.8-3.12).
+Otherwise, install [Anaconda](https://www.anaconda.com/download), then [NEURON](https://github.com/neuronsimulator/nrn/releases/tag/8.2.7) 8.2.7, which is compatible with Python versions 3.9-3.13).
 
 Then, go to Settings > System > About > Advanced system settings > Environment Variables. Add the following to your Path variable: *C:\path\to\anaconda3\Scripts*, *C:\path\to\anaconda3*, *C:\path\to\anaconda3\Library\bin*, and *C:\nrn\bin*.
 
