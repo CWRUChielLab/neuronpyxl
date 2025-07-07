@@ -65,4 +65,22 @@ This saves your data into one or more HDF5 files located in "Data/simname_data/"
 - --cluster: no arguments. Doesn't prompt user for clearing data folders. useful if running on a HPC cluster.
 - --folder *foldername*: If provided, saves into a folder with a custom name.
 
+HDF5 files are compressed hierarchical-structured files.
+For simulations that produce large quantities of data, they are preferable to CSVs because they enable better file I/O.
+You can load the file with \
+```
+import pandas as pd
+data = pd.HDFStore("path/to/file.h5")
+```
+
+If you run neuronpyxl with *vonly*, you can access the data with \
+`data["membrane"]`
+
+Otherwise, you can access the data with \
+```
+df_B4 = data["B4"] # To get the membrane current and voltage data for cell B4, for example
+df_cs = data["cs"] # To get the data for chemical synaptic currents
+df_es = data["es"] # To get the data for electrical synaptic currents
+```
+
 See the Examples folder for how to read data and run simulations from Python.
