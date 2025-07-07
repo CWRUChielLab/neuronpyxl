@@ -21,7 +21,7 @@ along with neuronpyxl. If not, see <https://www.gnu.org/licenses/>.
 """
 
 ###################################################################
-from neuronpyxl import modbuilder, network
+from . import modbuilder, network
 import argparse
 import subprocess
 import os

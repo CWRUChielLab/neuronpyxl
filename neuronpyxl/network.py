@@ -33,7 +33,7 @@ import os
 import platform
 import time
 from scipy.interpolate import CubicSpline
-from neuronpyxl import cell, reader
+from . import cell, reader
 from typing import Tuple
 import warnings
 

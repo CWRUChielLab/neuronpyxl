@@ -7,17 +7,21 @@ reqs = [
     "XlsxWriter>=3.2.0",
     "openpyxl>=3.1.5",
     "tables>=3.10.1",
-    "scipy>=1.15.0"
+    "scipy>=1.15.0",
 ]
 
 # List of all modules involved with the project
 MODULES = ["cell", "modbuilder", "network", "reader", "cmd_util"]
+
+with open("README.md", 'r') as f:
+    README = f.read()
 
 setup(
     name="neuronpyxl",
     version="1.0.0",
     author="Uri Dickman",
     description="neuronpyxl provides an Excel spreadsheet interface bulit into Python to run SNNAP-based models via the NEURON simulator.",
+    long_description=README,
     license="GNU General Public License v3.0",
     python_requires=">=3.10",
     install_requires=reqs,
@@ -25,8 +29,21 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'neuronpyxl=neuronpyxl.cmd_util:main',
+            'neuronpyxl=neuronpyxl.scripts:main',
         ],
-},
-    package_data={"neuronpyxl": ["modls/*.mod"]}
+    },
+    project_urls={
+        "Source code": "https://github.com/CWRUChielLab/neuronpyxl.git"
+    },
+    package_data={
+        "neuronpyxl": ["modls/*.mod"]
+    },
+    classifiers = [
+        "Programming Language :: Python :: 3",
+        'Development Status :: 1 - Pre-Alpha',
+        'Intended Audience :: Science/Research/Education',
+        'Topic :: Scientific/Engineering',
+        'License :: GNU General Public License v3 (GPLv3)',
+        'Operating System :: OS Independent'
+    ],
 )
