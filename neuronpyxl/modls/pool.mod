@@ -1,7 +1,7 @@
 UNITS {
     (mM) = (milli/liter)
-	(mA) = (milliamp)
-	(um) = (micrometer)
+    (mA) = (milliamp)
+    (um) = (micrometer)
 }
 
 NEURON {

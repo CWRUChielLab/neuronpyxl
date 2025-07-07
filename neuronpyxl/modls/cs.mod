@@ -1,7 +1,7 @@
 UNITS {
-	(mV) = (millivolt)
-	(nA) = (nanoamp)
-	(uS) = (microsiemens)
+    (mV) = (millivolt)
+    (nA) = (nanoamp)
+    (uS) = (microsiemens)
     (um) = (micrometer)
     (mM) = (milli/liter)
 }
@@ -10,7 +10,7 @@ NEURON {
     POINT_PROCESS neuronpyxl_CS
     RANGE g, e, i, u1, u2, ud, ur, h, s, p, tx, u, ion, depress, voltage_dependence, dur
     NONSPECIFIC_CURRENT i
-	POINTER mod
+    POINTER mod
 }
 
 PARAMETER {

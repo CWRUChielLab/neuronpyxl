@@ -1,7 +1,7 @@
 UNITS {
-	(mV) = (millivolt)
-	(nA) = (nanoamp)
-	(uS) = (microsiemens)
+    (mV) = (millivolt)
+    (nA) = (nanoamp)
+    (uS) = (microsiemens)
 }
 
 NEURON {

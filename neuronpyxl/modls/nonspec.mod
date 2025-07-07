@@ -1,7 +1,7 @@
 UNITS {
-	(mV) = (millivolt)
-	(mA) = (milliamp)
-	(uS) = (microsiemens)
+    (mV) = (millivolt)
+    (mA) = (milliamp)
+    (uS) = (microsiemens)
     (um) = (micrometer)
     (mM) = (milli/liter)
 }
