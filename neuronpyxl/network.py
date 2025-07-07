@@ -358,7 +358,7 @@ class NetworkBuilder:
                             case "na":
                                 syn._ref_mod = presyn.section(0.5)._ref_nai
                             case "k":
-                                syn._ref_mod = presyn.section(0.5)._ref_kai
+                                syn._ref_mod = presyn.section(0.5)._ref_ki
                             case "cl":
                                 syn._ref_mod = presyn.section(0.5)._ref_cli
                             case _:
