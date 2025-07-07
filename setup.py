@@ -11,7 +11,7 @@ reqs = [
 ]
 
 # List of all modules involved with the project
-MODULES = ["cell", "modbuilder", "network", "reader", "cmd_util"]
+MODULES = ["cell", "modbuilder", "network", "reader"]
 
 with open("README.md", 'r') as f:
     README = f.read()
