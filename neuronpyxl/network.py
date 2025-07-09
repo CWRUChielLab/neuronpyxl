@@ -28,11 +28,9 @@ import numpy as np
 import pandas as pd
 import gc
 import copy
-import sys
 import os
-import platform
 import time
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import splprep, splev
 from . import cell, reader
 from typing import Tuple
 import warnings
@@ -821,8 +819,13 @@ class NetworkBuilder:
         cell_data["t"] -= self.eq_time + self.noise_eq_time
         return copy.deepcopy(cell_data)
             
-    
-    def get_interpolated_cell_data(self, name: str, tvec: iter, loc=0.5) -> dict:
+   
+    def interpolate_data(self,tvec:np.array,t:np.array,y:np.array):
+        tck, _ = splprep(t,y, k=3,s=32)
+        return splev(tvec, tck)
+
+
+    def get_interpolated_cell_data(self, name: str, tvec: np.array, loc=0.5) -> dict:
         """Returns an the cell data linearly interpolated to a time vector.
 
         Args:
@@ -833,26 +836,13 @@ class NetworkBuilder:
         Returns:
             dict: dictionary of all of the interpolated data
         """
-        # cell_data = self.get_cell_data(name, loc)
-        # t = cell_data["t"]
-        # tu, ind = np.unique(t, return_index=True)  # get indices of unique times in case of duplicates
-        # cell_interp = {"t": tvec}
-        # for k, v in cell_data.items():
-        #     if k != "t":
-        #         # cell_interp[k] = np.interp(tvec, t, v)
-        #         vu = v[ind]
-        #         cs = CubicSpline(tu,vu)
-        #         cell_interp[k] = cs(tvec)
         cell_data = self.get_cell_data(name, loc)
         t = cell_data["t"]
-        # tu, ind = np.unique(t, return_index=True)  # get indices of unique times in case of duplicates
         cell_interp = {"t": tvec}
+
         for k, v in cell_data.items():
             if k != "t":
-                # cell_interp[k] = np.interp(tvec, t, v)
-                cs = CubicSpline(t,v)
-                cell_interp[k] = cs(tvec)
-                
+                cell_interp[k] = self.interpolate_data(tvec, t, v)
         return cell_interp
     
     
@@ -869,25 +859,17 @@ class NetworkBuilder:
         if chem_data is not None:
             chem_interp = {"t": tvec}
             tchem = chem_data["t"]
-            tu, ind = np.unique(tchem, return_index=True)
             for k, v in chem_data.items():
                 if k != "t":
-                    # chem_interp[k] = np.interp(tvec, tchem, v)
-                    vu = v[ind]
-                    cs = CubicSpline(tu,vu)
-                    chem_interp[k] = cs(tvec)
+                    chem_interp[k] = self.interpolate_data(tvec, tchem, v)
         else:
             chem_interp = None
         if elec_data is not None:
             elec_interp = {"t": tvec}
             telec = elec_data["t"]
-            tu, ind = np.unique(telec, return_index=True)
             for k, v in elec_data.items():
                 if k != "t":
-                    # elec_interp[k] = np.interp(tvec, telec, v)
-                    vu = v[ind]
-                    cs = CubicSpline(tu,vu)
-                    elec_interp[k] = cs(tvec)
+                    elec_interp[k] = self.interpolate_data(tvec, telec, v)
         else:
             elec_interp = None
         return chem_interp, elec_interp
