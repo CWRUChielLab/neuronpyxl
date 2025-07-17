@@ -30,7 +30,7 @@ import gc
 import copy
 import os
 import time
-from scipy.interpolate import splprep, splev
+from scipy.interpolate import CubicSpline
 from . import cell, reader
 from typing import Tuple
 import warnings
@@ -821,8 +821,11 @@ class NetworkBuilder:
             
    
     def interpolate_data(self,tvec:np.array,t:np.array,y:np.array):
-        tck, _ = splprep(t,y, k=3,s=32)
-        return splev(tvec, tck)
+        #return np.interp(tvec,t,y)
+        cs = CubicSpline(t,y)
+        return cs(tvec)
+        #tck, _ = splprep(t,y, k=3,s=32)
+        #return splev(tvec, tck)
 
 
     def get_interpolated_cell_data(self, name: str, tvec: np.array, loc=0.5) -> dict:

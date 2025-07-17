@@ -157,7 +157,6 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
     data_file_name = f"{name}_data.h5"
     mode = "w"
     if vonly: # if only voltage and time are recorded
-        print("vonly")
         data = {}
         for c in nb.cells.keys():
             if interp <= 0:
