@@ -23,6 +23,7 @@ along with pySNNAP. If not, see <https://www.gnu.org/licenses/>.
 
 from neuron import h
 from typing import List
+import numpy as np
 
 class Cell:
     
@@ -52,11 +53,11 @@ class Cell:
         self.section.diam = diam
         # Not really sure that this is necessary because there is no compartment-based modeling in SNNAP, but it's here if this should be incorporated in the future.
         self.section.nseg = int((L/(0.1*h.lambda_f(100, self.section))+.999)/2)*2 + 1 # d_lambda rule, see NEURON docs
-        self.area = {seg.x: self.section(seg.x).area()*1e-8 for seg in self.section} # maps area of cell at each location available in the cell. 0.5 is always a location in the cell
+        self.area = self.section(0.5).area()*1e-8
         
         # Biophysical properties
         self.section.Ra = Ra
-        self.section.cm = cm/self.area[0.5] # set the specific membrane capacitance according to the area at 0.5 as a convention
+        self.section.cm = cm/self.area # set the specific membrane capacitance according to the area at 0.5 as a convention
         
         # Insert mechanisms
         self.current_mechs = current_mechs
@@ -114,15 +115,6 @@ class Cell:
         return ic
     
     
-    def vclamp(self, loc=0.5, dur=100.0, amp=1.0, r=1.0, i=1.0):
-        vc = h.SEClamp(self.section(loc))
-        vc.dur1 = dur
-        vc.amp1 = amp
-        vc.rs = r
-        vc.i = i
-        return vc
-
-
     def get_attribute(self, loc: float, mech: str, attr: str) -> any:
         """Gets an attribute from this Cell.
 
@@ -161,7 +153,7 @@ class Cell:
         setattr(self.section(loc), attr, val)
 
 
-    def current_density_to_nA(self, ivec, loc=0.5) -> iter:
+    def current_density_to_nA(self, ivec) -> iter:
         """Unit conversion helper function to convert distributed currents to absolute units.
 
         Args:
@@ -171,33 +163,28 @@ class Cell:
         Returns:
             iter: _description_
         """
-        return ivec*self.area[loc]*1e6
+        return ivec*self.area*1e6
 
 
-    def set_iv_recording(self, loc:float=0.5):
+    def set_iv_recording(self):
         """Set up recording of currents and voltage in the cell.
-
-        Args:
-            loc (float): location in the cell to record at. Defaults to 0.5.
         """
-        self.recording[loc] = {}
-        self.recording[loc]["V"] = h.Vector().record(self.section(loc)._ref_v) # record potential
+        loc = 0.5
+        self.recording = {}
+        self.recording["V"] = h.Vector().record(self.section(loc)._ref_v) # record potential
         
-        self.recording[loc]["I"] = {} # record all currents
+        self.recording["I"] = {} # record all currents
         for m in self.current_mechs:
-            self.recording[loc]["I"][m] = h.Vector().record(self.get_reference(loc, f"i_{m}"))
-        self.recording[loc]["I"]["cap"] = h.Vector().record(self.section(loc)._ref_i_cap)
+            self.recording["I"][m] = h.Vector().record(self.get_reference(loc, f"i_{m}"))
+        self.recording["I"]["cap"] = h.Vector().record(self.section(loc)._ref_i_cap)
 
 
-    def set_other_recording(self, loc: float, mech: str, attr: str):
-        self.recording[loc][attr] = h.Vector().record(self.get_reference(loc, f"{attr}_{mech}"))
+    def set_other_recording(self, mech: str, attr: str):
+        self.recording[attr] = h.Vector().record(self.get_reference(0.5, f"{attr}_{mech}"))
     
     
-    def get_data(self, loc=0.5) -> dict:
+    def get_data(self) -> dict:
         """Recursively get data from the recording dictionary. Used by the NetworkBuilder.
-
-        Args:
-            loc (float, optional): Location in cell. Defaults to 0.5.
 
         Returns:
             dict: Dictionary with all of the recordings. Direct key-val mapping depth of 1.
@@ -208,22 +195,9 @@ class Cell:
                 new_key = f'{parent_key}{sep}{k}' if parent_key else k
                 if isinstance(v, dict):
                     items.update(flatten_dict(v, new_key, sep=sep))
+                elif isinstance(v,list):
+                    items["I_app"] = np.sum([r.as_numpy() for r in self.recording["iclamps"]],axis=0)
                 else:
                     items[new_key.replace("neuronpyxl_", "")] = v.as_numpy()
             return items
-        return flatten_dict(self.recording[loc])
-
-
-    def reset_recordings(self):
-        """Deprecated.
-        """
-        def resize_recordings(d):
-            for v in d.values():
-                if isinstance(v, dict):
-                    resize_recordings(v)
-                elif isinstance(v, list):
-                    for e in v:
-                        e.resize(0)
-                else:
-                    v.resize(0)
-        resize_recordings(self.recording)
+        return flatten_dict(self.recording)

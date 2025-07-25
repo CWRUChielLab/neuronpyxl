@@ -21,3 +21,4 @@ figs/
 *.sh
 scratch/
 NEURON_data/
+build/

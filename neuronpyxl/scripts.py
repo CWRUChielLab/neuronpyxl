@@ -155,7 +155,7 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
     print(f"Saving data...")
  
     data_file_name = f"{name}_data.h5"
-    mode = "w"
+    file = pd.HDFStore(data_file_name,mode="w")
     if vonly: # if only voltage and time are recorded
         data = {}
         for c in nb.cells.keys():
@@ -167,28 +167,26 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
             if "t" not in data:
                 data["t"] = cell_data["t"]
             data[f"V_{c}"] = cell_data["V"]
-        pd.DataFrame(data).to_hdf(os.path.join(results_folder, data_file_name), key="membrane", mode=mode)
+        pd.DataFrame(data).to_hdf(os.path.join(results_folder, data_file_name), key="membrane", mode="a")
     else: # If all currents and concentrations are recorded, then save each cell's data in its own .h5 file.
+        if syn:
+            if interp <= 0:
+                chemsyn_data, elecsyn_data = nb.get_synaptic_current_data()
+            else:
+                tvec = np.arange(start=0,stop=duration,step=interp)
+                chemsyn_data, elecsyn_data = nb.get_interpolated_syn_data(tvec)
+            if chemsyn_data is not None: # could be none if there are one of cs or es present
+                pd.DataFrame(chemsyn_data).to_hdf(os.path.join(results_folder, data_file_name), key="cs", mode="a")
+            if elecsyn_data is not None:
+                pd.DataFrame(elecsyn_data).to_hdf(os.path.join(results_folder, data_file_name), key="es", mode="a")
         for c in nb.cells.keys():
             if interp <= 0:
                 cell_data = nb.get_cell_data(c)
-                if syn:
-                    chemsyn_data, elecsyn_data = nb.get_synaptic_current_data()
             else:
                 tvec = np.arange(start=0,stop=duration,step=interp)
                 cell_data = nb.get_interpolated_cell_data(c, tvec)
-                if syn:
-                    chemsyn_data, elecsyn_data = nb.get_interpolated_syn_data(tvec)
-            if syn:
-                if chemsyn_data is not None: # could be none if there are one of cs or es present
-                    pd.DataFrame(chemsyn_data).to_hdf(os.path.join(results_folder, data_file_name), key="cs", mode=mode)
-                    mode = "a"
-                if elecsyn_data is not None:
-                    pd.DataFrame(elecsyn_data).to_hdf(os.path.join(results_folder, data_file_name), key="es", mode=mode)
-                    mode = "a"
-            pd.DataFrame(cell_data).to_hdf(os.path.join(results_folder, data_file_name), key=f"{c}", mode=mode)
-            mode = "a"
-
+            pd.DataFrame(cell_data).to_hdf(os.path.join(results_folder, data_file_name), key=f"{c}", mode="a")
+    file.close()
     # Save metadata
     nb.generate_metadata(voltage_only=vonly,folder=results_folder) # Generate a metadata file stored in info.txt
     print(f"Simulation complete! Data has been saved to {os.path.join(results_folder,data_file_name)}.\nSimulation info can be found in {os.path.join(results_folder,'info.txt')}")

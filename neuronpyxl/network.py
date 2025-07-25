@@ -46,31 +46,39 @@ class NetworkBuilder:
         """
         self.cwd = os.getcwd()
         h.load_file("stdrun.hoc")
+
+        # I don't think this is needed
         # if platform.uname()[0] == "Windows":
         #     h.nrn_load_dll(os.path.join(self.cwd, "nrnmech.dll"))
-        self.name = "sim"
         self.cells = {} # Dict[cell name -> Cell object] (see cell.py)
         
-        # To prevent garbage collection, store all necessary objects:
-        self.electrical_synapses = {} # Dict[presynaptic cell name -> Dict[postsynaptic cell name -> PointProcess]]
-        self.chemical_synapses = {"fast": {}, "slow": {}} # Dict[synapse type -> Dict[presynaptic cell name -> Dict[postsynaptic cell name -> Dict["synapse" -> PointProcess, "netcon" -> NetCon]]]]
+        ############# To prevent garbage collection, store all necessary objects #############
+
+        # Dict[presynaptic cell name -> Dict[postsynaptic cell name -> PointProcess]]
+        self.electrical_synapses = {} 
+        # Dict[synapse type -> Dict[presynaptic cell name -> Dict[postsynaptic cell name ->
+        #Dict["synapse" -> PointProcess, "netcon" -> NetCon]]]]
+        self.chemical_synapses = {"fast": {}, "slow": {}}
         self.input_resistance = {} # stores input resistances
+
         if noise is not None:
             self.noise = {"rate": noise[0], "scale": noise[1], "tau": noise[2]}
         else:
             self.noise = None
         self.noise_cons = {}
         self.seed = seed
-        # There can be multiple clamps at the same location. This may be deprecated at some point, because this model uses 0.5 as the default and only location.
-        self.current_clamps = {} # Dict[cell name -> Dict[location -> List[IClamp]]]
-        self.voltage_clamps = {} # Dict[cell name -> Dict[location -> List[VClamp]]
+
+        # There can be multiple clamps at the same location. This may be deprecated at some pointers
+        # because this model uses 0.5 as the default and only location.
+        self.current_clamps = {} # Dict[cell name -> List[h.IClamp]]
         self.pools_active = {}
         
         self.zero_ref = h.Vector(1) # Create a 0 reference in case there are unused hoc pointers
         self.zero_ref.x[0] = 0  # Set the first element to zero
         
-        self.prefix = "neuronpyxl_" # mod file
-        # Simulation setup parameters
+        self.prefix = "neuronpyxl_" # See mod file suffixes
+
+        ############ Simulation setup parameters #############
         self.dt = dt
         self.integrator = integrator # can be 1 or 2 (1: Backwards Euler, 2: Crank-Nicholson)
         match self.integrator:
@@ -196,10 +204,10 @@ class NetworkBuilder:
                         vdg_parameters[key][f"numataus"] = 0
                         vdg_parameters[key][f"numbtaus"] = 0
             # Create the Cell object
-            mechs_with_prefix = [self.prefix + m for m in vdg_parameters.keys()] # Need to add "neuronpyxl_" before every mechanism (see mod files)
-            c = cell.Cell(name=name, current_mechs=mechs_with_prefix, cm=cm) # create a cell, which inserts mechanisms into the cell
-            # Set the parameter values of the mechanisms in this cell  based on the now-filled vdg_parameters dictionary
-            
+            # Need to add "neuronpyxl_" before every mechanism (see mod files)
+            mechs_with_prefix = [self.prefix + m for m in vdg_parameters.keys()]
+            # create a cell, which inserts mechanisms into the cell
+            c = cell.Cell(name=name, current_mechs=mechs_with_prefix, cm=cm)
             for mech, d in vdg_parameters.items():
                 for param, val in d.items():
                     setattr(c.section(0.5), f"{param}_{self.prefix}{mech}", val)
@@ -277,7 +285,7 @@ class NetworkBuilder:
         if self.reader.iclamp_data.empty:
             return
         for name, row in self.reader.iclamp_data.iterrows():
-            self.attach_iclamp(name, loc=0.5, delay=row["start"]*1000, dur=(row["stop"]-row["start"])*1000, amp=row["magnitude"])
+            self.attach_iclamp(name, delay=row["start"]*1000, dur=(row["stop"]-row["start"])*1000, amp=row["magnitude"])
         
         
     def add_synapses_from_reader(self):
@@ -452,15 +460,20 @@ class NetworkBuilder:
 
     
     def compute_input_resistance(self):
+        """
+        Function to compute the imput resistance of each cell in the network.
+        """
         for name, cell in self.cells.items():
             z = h.Impedance()
             z.loc(0.5, sec=cell.section)  # Measure impedance at the center of the soma
             z.compute(0)  # Compute impedance at frequency f=0 (DC)
-            self.input_resistance[name] = z.input(0.5, sec=cell.section)  # Location 0.5 is the center of the soma
+            self.input_resistance[name] = z.input(0.5, sec=cell.section) 
     
             
     def add_noise(self):
-        # self.compute_input_resistance()
+        """
+        Function to add noise inthe form of 2 netstims with equal driving force.
+        """
         e1 = 60
         e2 = -90
         rate = self.noise["rate"] / 1000 # 1 / ms
@@ -522,7 +535,7 @@ class NetworkBuilder:
             d2["netstim"].seed(seed2)
     
     
-    def attach_iclamp(self, name: str, loc=0.5, delay=None, dur=None, amp=None):
+    def attach_iclamp(self, name: str, delay=None, dur=None, amp=None):
         """_summary_
 
         Args:
@@ -535,33 +548,14 @@ class NetworkBuilder:
         Returns:
             _type_: _description_
         """
-        try:
-            assert name in self.cells, f"Cell name '{name}' not found in cells dict"
-            assert 0.0 <= loc <= 1.0, f"loc '{loc}' must be between 0.0 and 1.0, inclusive"
-        except AssertionError:
-            return h.IClamp()
+        assert name in self.cells, f"Cell name '{name}' not found in cells dict"
         delaytime = delay+self.eq_time+self.noise_eq_time if delay is not None else None
-        ic = self.cells[name].iclamp(delaytime, dur, amp, loc)
-        self.current_clamps.setdefault(name, {})
-        if loc in self.current_clamps[name]:
-            self.current_clamps[name][loc].append(ic)
-        else:
-            self.current_clamps[name][loc] = [ic]
+        ic = self.cells[name].iclamp(delaytime, dur, amp, 0.5)
+        self.current_clamps.setdefault(name, []).append(ic)
         return ic
-            
-            
-    def attach_vclamp(self, name: str, loc=0.5, dur=100.0, amp=1.0, r=1.0, i=1.0):
-        self.secondorder = 0
-        print("Notice: VClamp is a stiff model. Defaulted to h.secondorder = 0 (Backwards-Euler integration)")
-        vc = self.cells[name].vclamp(loc, dur, amp, r, i)
-        self.current_clamps.setdefault(name, {})
-        if loc in self.voltage_clamps[name]:
-            self.voltage_clamps[name][loc].append(vc)
-        else:
-            self.voltage_clamps[name][loc] = [vc]
+
     
-    
-    def remove_iclamp(self, name: str, loc: float, index: int):
+    def remove_iclamp(self, name: str, index: int):
         """_summary_
 
         Args:
@@ -569,18 +563,11 @@ class NetworkBuilder:
             loc (float): _description_
         """
         assert name in self.current_clamps, f"Cell '{name}' must be the name of a cell in the Network, and the IClamp must already exist"
-        if name in self.recording and loc in self.recording[name]["clamps"]["I"]:
-            del self.recording[name]["clamps"]["I"][loc][index]
-        del self.current_clamps[name][loc][index]
+        if name in self.recording:
+            del self.recording[name]["iclamps"][index]
+        del self.current_clamps[name][index]
     
     
-    def remove_vclamp(self, name: str, loc: float, index: int):
-        assert name in self.voltage_clamps, f"Cell '{name}' must be the name of a cell in the Network, and the VClamp must already exist"
-        if name in self.recording and loc in self.recording[name]["clamps"]["V"]:
-            del self.recording[name]["clamps"]["V"][loc][index]
-        del self.voltage_clamps[name][loc][index]
-
-
     def set_mech_parameter(self, name: str, param: str, val: float) -> None:
         setattr(self.cells[name].section(0.5), param, val)
     
@@ -609,23 +596,15 @@ class NetworkBuilder:
         self.voltage_only = True
         self.recording["t"] = h.Vector().record(h._ref_t)
         for name, cell in self.cells.items():
-            cell.recording = {0.5: {"V": h.Vector().record(cell.section(0.5)._ref_v)}}
+            cell.recording = {"V": h.Vector().record(cell.section(0.5)._ref_v)}
             self.recording[name] = cell.recording
-            # self.record_iclamps(0.5)
-            self.recording[name]["clamps"] = {"I": {0.5: {}}, "V": {0.5: {}}}
             if name in self.current_clamps:
-                for loc, clamp_list in self.current_clamps[name].items():
-                    self.recording[name]["clamps"]["I"][loc] = []
-                    for clamp in clamp_list:
-                        self.recording[name]["clamps"]["I"][loc].append(h.Vector().record(clamp._ref_i))
-            if name in self.voltage_clamps:
-                for loc, clamp_list in self.voltage_clamps[name].items():
-                    self.recording[name]["clamps"]["V"][loc] = []
-                    for clamp in clamp_list:
-                        self.recording[name]["clamps"]["V"][loc].append(h.Vector().record(clamp._ref_v))
+                self.recording[name]["iclamps"] = []
+                for clamp in self.current_clamps[name]:
+                    self.recording[name]["iclamps"].append(h.Vector().record(clamp._ref_i))
+
     
-    
-    def record_all(self, all_locs = False, at_locs=[0.5]):
+    def record_all(self):
         """Records data in every location in the cell. (Might switch to just 0.5 later)
            Data recorded: time, membrane potential, currents from all current mechanisms, Ca and Na pool concentrations if available. 
            Also records injected volage and current if available.
@@ -636,37 +615,26 @@ class NetworkBuilder:
         """
         self.voltage_only = False
         self.recording["t"] = h.Vector().record(h._ref_t)
-        if all_locs:
-            locs = [seg.x for seg in cell.section]
-        else:
-            locs = at_locs
         for name, cell in self.cells.items():
-            for loc in locs:
-                cell.set_iv_recording(loc)
-                if name in self.pools_active.keys():
-                    if "ca" in self.pools_active[name]:
-                        cell.recording[loc]["cai"] = h.Vector().record(cell.section(loc)._ref_cai)
-                    if "na" in self.pools_active[name]:
-                        cell.recording[loc]["nai"] = h.Vector().record(cell.section(loc)._ref_nai)
-                    if "k" in self.pools_active[name]:
-                        cell.recording[loc]["ki"] = h.Vector().record(cell.section(loc)._ref_ki)
-                    if "cl" in self.pools_active[name]:
-                        cell.recording[loc]["cli"] = h.Vector().record(cell.section(loc)._ref_cli)
+            cell.set_iv_recording()
+            if name in self.pools_active.keys():
+                if "ca" in self.pools_active[name]:
+                    cell.recording["cai"] = h.Vector().record(cell.section(0.5)._ref_cai)
+                if "na" in self.pools_active[name]:
+                    cell.recording["nai"] = h.Vector().record(cell.section(0.5)._ref_nai)
+                if "k" in self.pools_active[name]:
+                    cell.recording["ki"] = h.Vector().record(cell.section(0.5)._ref_ki)
+                if "cl" in self.pools_active[name]:
+                    cell.recording["cli"] = h.Vector().record(cell.section(0.5)._ref_cli)
             if self.noise is not None:
-                cell.recording[0.5]["noise1"] = h.Vector().record(self.noise_cons[name][0]["syn"]._ref_i)
-                cell.recording[0.5]["noise2"] = h.Vector().record(self.noise_cons[name][1]["syn"]._ref_i)
+                cell.recording["noise1"] = h.Vector().record(self.noise_cons[name][0]["syn"]._ref_i)
+                cell.recording["noise2"] = h.Vector().record(self.noise_cons[name][1]["syn"]._ref_i)
             self.recording[name] = cell.recording
-            self.recording[name]["clamps"] = {"I": {0.5: []}, "V": {0.5: []}}
-            if name in self.current_clamps:
-                for loc, clamp_list in self.current_clamps[name].items():
-                    self.recording[name]["clamps"]["I"][loc] = []
-                    for clamp in clamp_list:
-                        self.recording[name]["clamps"]["I"][loc].append(h.Vector().record(clamp._ref_i))
-            if name in self.voltage_clamps:
-                for loc, clamp_list in self.voltage_clamps[name].items():
-                    self.recording[name]["clamps"]["V"][loc] = []
-                    for clamp in clamp_list:
-                        self.recording[name]["clamps"]["V"][loc].append(h.Vector().record(clamp._ref_v))
+            if name in self.current_clamps.keys():
+                self.recording[name]["iclamps"] = []
+                for clamp in self.current_clamps[name]:
+                    self.recording[name]["iclamps"].append(h.Vector().record(clamp._ref_i))
+    
         if self.record_synaptic_currents:
             if len(self.chemical_synapses) > 0:
                 self.synaptic_currents_recording["chemical"] = {}
@@ -682,15 +650,14 @@ class NetworkBuilder:
             self.synaptic_currents_recording["t"] = h.Vector().record(h._ref_t)
     
     
-    def record(self, voltage_only: bool, all_locs: bool, at_locs: list):
+    def record(self, voltage_only: bool):
         if voltage_only:
             self.record_voltage_only()
         else:
-            self.record_all(all_locs=all_locs, at_locs=at_locs)
+            self.record_all()
     
     
-    def setup_run(self, record_none:bool=False,all_locs:bool=False,\
-                    voltage_only:bool=False, at_locs=[0.5]):
+    def setup_run(self, record_none:bool=False,voltage_only:bool=False):
         for name, c in self.cells.items():
             for seg in c.section:
                 seg.v = self.v0[name]
@@ -703,10 +670,10 @@ class NetworkBuilder:
         h.celsius = self.temp
         h.secondorder = self.secondorder
         if not record_none:
-            self.record(voltage_only, all_locs=all_locs, at_locs=at_locs) 
+            self.record(voltage_only) 
         
     
-    def run(self, all_locs=False, at_locs=[0.5],voltage_only=False,record_none=False):
+    def run(self,voltage_only=False,record_none=False):
         """_summary_
 
         Args:
@@ -714,7 +681,7 @@ class NetworkBuilder:
             at_locs (List[float], optional): Provide the locations on the segment to record in every cell. Will error if a location is not on the segment. Defaults to [0.5].
             all_locs (boolean, optional): If true, will record data at every location in the segment in every cell and ignores at_locs argument. Defaults to False.
         """
-        self.setup_run(record_none=record_none,voltage_only=voltage_only,all_locs=all_locs, at_locs=at_locs)
+        self.setup_run(record_none=record_none,voltage_only=voltage_only)
         print("Running simulation...")
         start_time = time.time()
         h.finitialize()
@@ -753,7 +720,7 @@ class NetworkBuilder:
         return copy.deepcopy(chem_data), copy.deepcopy(elec_data)
         
         
-    def get_cell_data(self, name: str, loc=0.5) -> dict:
+    def get_cell_data(self, name: str) -> dict:
         """Function to return all other data from cell, including ion channel currents, applied current injections, membrane potential, and ion concentrations.
 
         Args:
@@ -764,7 +731,7 @@ class NetworkBuilder:
             dict: dict of all of the cell's data. 
         """
         c = self.cells[name]
-        cell_data = c.get_data(loc)
+        cell_data = c.get_data()
         adjust_t = 0
         if self.dt > 0:
             if self.secondorder == 1:
@@ -778,27 +745,24 @@ class NetworkBuilder:
             noise2 = cell_data.pop("noise2")
             cell_data["noise"] = noise1 + noise2
         for k, v in cell_data.items():
-            if k[0] == "I":
-                cell_data[k] = c.current_density_to_nA(v, loc)
-        for clamp_type, clamp_recording in self.recording[name]["clamps"].items():
-            if loc in clamp_recording:
-                if len(clamp_recording[loc]) > 0:
-                    cell_data[f"{clamp_type}_applied_{loc}"] = np.sum([r.as_numpy() for r in clamp_recording[loc]], axis=0)
+            if k[0] == "I" and k != "I_app":
+                cell_data[k] = c.current_density_to_nA(v)
         for k in cell_data.keys():
             cell_data[k] = cell_data[k][indices]  # Modify dictionary in-place
         cell_data["t"] -= self.eq_time + self.noise_eq_time + adjust_t
+
         return copy.deepcopy(cell_data)
             
    
     def interpolate_data(self,tvec:np.array,t:np.array,y:np.array):
-        #return np.interp(tvec,t,y)
-        cs = CubicSpline(t,y)
+        # Remove duplicates and ensure t is strictly increasing
+        t_sorted, unique_indices = np.unique(t, return_index=True)
+        y_sorted = y[unique_indices]
+        cs = CubicSpline(t_sorted, y_sorted)
         return cs(tvec)
-        #tck, _ = splprep(t,y, k=3,s=32)
-        #return splev(tvec, tck)
 
 
-    def get_interpolated_cell_data(self, name: str, tvec: np.array, loc=0.5) -> dict:
+    def get_interpolated_cell_data(self, name: str, tvec: np.array) -> dict:
         """Returns an the cell data linearly interpolated to a time vector.
 
         Args:
@@ -809,10 +773,10 @@ class NetworkBuilder:
         Returns:
             dict: dictionary of all of the interpolated data
         """
-        cell_data = self.get_cell_data(name, loc)
+        cell_data = self.get_cell_data(name)
         t = cell_data["t"]
         cell_interp = {"t": tvec}
-
+        
         for k, v in cell_data.items():
             if k != "t":
                 cell_interp[k] = self.interpolate_data(tvec, t, v)
