@@ -22,3 +22,4 @@ figs/
 scratch/
 NEURON_data/
 build/
+*.h5

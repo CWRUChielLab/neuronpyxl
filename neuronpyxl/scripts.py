@@ -155,7 +155,7 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
     print(f"Saving data...")
  
     data_file_name = f"{name}_data.h5"
-    file = pd.HDFStore(data_file_name,mode="w")
+    file = pd.HDFStore(os.path.join(results_folder, data_file_name),mode="w")
     if vonly: # if only voltage and time are recorded
         data = {}
         for c in nb.cells.keys():
