@@ -6,7 +6,7 @@ import numpy as np
 import os
 import pandas as pd
 plt.style.use(["no-latex", "notebook"])
-datapath = os.path.join("OptimizedData")
+datapath = os.path.join(os.getcwd(),"Dickman_etal_2025_Figures/Data/fig12-13")
 sys.path.append(datapath)
 figpath = "figs"
 sys.path.append(figpath)

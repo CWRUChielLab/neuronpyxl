@@ -26,12 +26,14 @@ along with neuronpyxl. If not, see <https://www.gnu.org/licenses/>.
 from neuron import h
 import numpy as np
 import pandas as pd
+import gc
 import copy
 import os
 import time
 from scipy.interpolate import CubicSpline
 from . import cell, reader
 from typing import Tuple
+import warnings
 
 class NetworkBuilder:
     def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float, eq_time: float, simdur:float, seed:bool):
@@ -57,6 +59,7 @@ class NetworkBuilder:
         self.input_resistance = {} # stores input resistances
         if noise is not None:
             self.noise = {"rate": noise[0], "scale": noise[1], "tau": noise[2]}
+            # self.noise = {"std": noise[0], "rate": noise[1]}
         else:
             self.noise = None
         self.noise_cons = {}
@@ -699,9 +702,9 @@ class NetworkBuilder:
         else:
             h.cvode.active(True)
             h.cvode.atol(self.atol)
-            h.cvode.maxstep(10)
         h.celsius = self.temp
         h.secondorder = self.secondorder
+        # if not self.ran_before:
         if not record_none:
             self.record(voltage_only, all_locs=all_locs, at_locs=at_locs) 
         
@@ -724,6 +727,33 @@ class NetworkBuilder:
         self.ran_before = True
 
 
+    def reset_recordings(self):
+        """Deprecated
+        """
+        warnings.warn("Warning: using reset_recordings is deprecated. Use h.frecord_init() or h.cvode.re_init() instead (I think?)")
+        self.recording["t"].resize(0)
+        if self.record_synaptic_currents:
+            def resize_recording(d):
+                for v in d.values():
+                    if isinstance(v, dict):
+                        resize_recording(v)
+                    else:
+                        v.resize(0)
+            resize_recording(self.synaptic_currents_recording)
+        for k, d in self.recording.items():
+            if k != "t":
+                for v in d["clamps"]["I"].values():
+                    for ic in v:
+                        ic.resize(0)
+                for v in d["clamps"]["V"].values():
+                    for vc in v:
+                        vc.resize(0)
+        for c in self.cells.values():
+            c.reset_recordings()
+        self.dt = -1
+        gc.collect()
+        
+        
     def get_synaptic_current_data(self) -> Tuple[dict]:
         """Returns the current data from electrical and chemical synapses, if present. If one is not present, it is returned as None.
 
@@ -771,8 +801,8 @@ class NetworkBuilder:
                 adjust_t = self.dt/2
             elif self.secondorder == 2:
                 adjust_t = -self.dt/2
-        cell_data["t"] = self.recording["t"].as_numpy()
-        indices = np.where(cell_data["t"] > (self.eq_time + self.noise_eq_time - adjust_t))[0]
+        cell_data["t"] = self.recording["t"].as_numpy()+adjust_t
+        indices = np.where(cell_data["t"] > (self.eq_time + self.noise_eq_time))[0]
         if self.noise is not None and not self.voltage_only:
             noise1 = cell_data.pop("noise1")
             noise2 = cell_data.pop("noise2")
@@ -786,7 +816,7 @@ class NetworkBuilder:
                     cell_data[f"{clamp_type}_applied_{loc}"] = np.sum([r.as_numpy() for r in clamp_recording[loc]], axis=0)
         for k in cell_data.keys():
             cell_data[k] = cell_data[k][indices]  # Modify dictionary in-place
-        cell_data["t"] -= self.eq_time + self.noise_eq_time + adjust_t
+        cell_data["t"] -= self.eq_time + self.noise_eq_time
         return copy.deepcopy(cell_data)
             
    
@@ -849,25 +879,12 @@ class NetworkBuilder:
 
     
     def save_state(self,filename:str="state.bin"):
-        """ Saves the state of the current neuron simulation.
-        
-        Args:
-            filename (str): filename of the state file to save to
-
-        """
         ss = h.SaveState()
         ss.save()
         sf = h.File(filename)
         ss.fwrite(sf)
 
     def restore_state(self,filename:str):
-        """ Restores the state of the simulation. In order for this to work, the simulation
-        must be set up exactly the same as when the state file was saved.
-
-        Args:
-            filename (str): name of the state file to restore.
-
-        """
         ss = h.SaveState()
         sf = h.File(filename)
         ss.fread(sf)

@@ -1,6 +1,6 @@
-excelpath = "/home/udickman/Desktop/projects/CWRU/neuronpyxl/Excel_files"
-figpath = "/home/udickman/Desktop/projects/CWRU/neuronpyxl/figs"
-datapath = "/home/udickman/Desktop/projects/CWRU/neuronpyxl/Data"
+excelpath = "/home/udickman/Desktop/projects/cwru/neuronpyxl/Excel_files"
+figpath = "/home/udickman/Desktop/projects/cwru/neuronpyxl/figs"
+datapath = "/home/udickman/Desktop/projects/cwru/neuronpyxl/Data"
 excelfile = "fig11-12-13.xlsx"
 fig_prefix = "Dickman_etal_Results"
 
@@ -45,7 +45,7 @@ num_cells = len(all_cells)
 # file = pd.HDFStore(os.path.join(datapath, folder, "BMP_data.h5"))
 # data = file["data"]
 #noise_params = None
-noise_params = (100,5e-5,15)
+noise_params = (200,1e-4,8)
 
 param1 = "vdg_g_B64s_kpp"
 param2 = "cs_g_B30_B63_fast"

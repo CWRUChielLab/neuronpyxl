@@ -7,15 +7,15 @@ import pandas as pd
 import os
 import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
-excelpath = "/home/udickman/Desktop/projects/CWRU/neuronpyxl/Excel_files"
-figpath = "/home/udickman/Desktop/projects/CWRU/neuronpyxl/figs"
-datapath = "/home/udickman/Desktop/projects/CWRU/neuronpyxl/OptimizedData"
+excelpath = "/home/udickman/Desktop/projects/cwru/neuronpyxl/Excel_files"
+figpath = "/home/udickman/Desktop/projects/cwru/neuronpyxl/figs"
+datapath = "/home/udickman/Desktop/projects/cwru/neuronpyxl/Dickman_etal_2025_Figures/Data/fig12-13"
 
 param1 = "vdg_g_B64s_kpp"
 param2 = "cs_g_B30_B63_fast"
 filename = "results.csv"
-noise = None
-#noise = (100,1e-5,15)
+#noise = None
+noise = (200,1e-4,8)
 #####################################################################
 
 chiel_data = pd.read_csv(os.path.join(datapath, "gillchiel_2020_data.csv"), header=[0,1,2])
@@ -71,37 +71,11 @@ def durations(x,y):
     meandur = np.mean(durs)
     stddur = np.std(durs)
     return np.nan if meandur > 10000 else (meandur,stddur,len(durs))
-"""
-def durations(x,y):
-    try:
-        crossings = np.where(np.diff(np.signbit(y)))[0]
-        x_zero = []
-        for i in crossings:
-            x_zero.append(np.interp(0, [y[i], y[i+1]], [x[i], x[i+1]]))
-        
-        x_zero = np.array(x_zero)
-        dx = np.diff(x_zero)
-        break_inds = np.where(dx > 4000)[0]
-    except IndexError:
-        return np.nan
-        
-    indices = []
-    indices.append(0)
-    for b in break_inds:
-        indices.append(b)
-        indices.append(b+1)
-    if len(indices) == 1:
-        return np.nan
-    durs = x_zero[indices[1::2]] - x_zero[indices[:-1:2]]
-    meandur = np.mean(durs)
-    stddur = np.std(durs)
-    return np.nan if meandur > 10000 else (meandur,stddur,len(durs))
-"""
+
 def set_params(nb:network.NetworkBuilder,v1,v2):
     nb.cells["B64s"].section(0.5).g_neuronpyxl_kpp = v1
     nb.chemical_synapses["fast"]["B30"]["B63"]["synapse"].g = v2
 
-folder = "OptimizedData"
 params = get_params()
 
 #params = {'loaded': {'vdg_g_B64s_kpp': np.float64(0.8084745762711865), 'cs_g_B30_B63_fast': np.float64(2.4898305084745767)}, 'unloaded': {'vdg_g_B64s_kpp': np.float64(1.3152542372881355), 'cs_g_B30_B63_fast': np.float64(1.6203389830508474)}}
@@ -114,9 +88,9 @@ for condition, vals in params.items():
     results.setdefault(condition,{"protraction": {},"retraction":{}})
 
     nb = network.NetworkBuilder(
-        params_file=os.path.join(excelpath,"control_updated.xlsx"),
-        sim_name="BMP",noise=noise,dt=-1,integrator=2,atol=1e-5,
-        eq_time=10000,simdur=120000,seed=True
+        params_file=os.path.join(excelpath,"fig11-12-13.xlsx"),
+        sim_name="BMP",noise=noise,dt=-1,integrator=2,atol=1e-3,
+        eq_time=10000,simdur=140000,seed=True
         )
     set_params(nb,vals[param1],vals[param2])
     nb.run(voltage_only=True)

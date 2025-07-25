@@ -8,7 +8,7 @@ import scienceplots
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D  # For legend
 plt.style.use(["no-latex", "notebook"])
-datapath = os.path.join(os.getcwd(),"OptimizedData")
+datapath = os.path.join(os.getcwd(),"Dickman_etal_2025_Figures/Data/fig12-13")
 sys.path.append(datapath)
 figpath = "./figs"
 sys.path.append(figpath)
@@ -132,7 +132,7 @@ def plot_ax(bmp, ax, sigma, delta, ylabel=True, contour=True,cv=False):
 fig,ax1 = plt.subplots(1,2,figsize=(10,10), constrained_layout=True)
 
 # PLOT BMP DURATIONS
-pc11 = plot_ax("protraction", ax1[0], 3.0, 0.2,True,True,False)
+pc11 = plot_ax("protraction", ax1[0], 1.8, 0.2,True,True,False)
 pc21 = plot_ax("retraction", ax1[1], 2.0, 0.2, False,True,False)
 
 #ax1[0].set_xticklabels([])
