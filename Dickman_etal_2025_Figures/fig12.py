@@ -132,8 +132,8 @@ def plot_ax(bmp, ax, sigma, delta, ylabel=True, contour=True,cv=False):
 fig,ax1 = plt.subplots(1,2,figsize=(10,10), constrained_layout=True)
 
 # PLOT BMP DURATIONS
-pc11 = plot_ax("protraction", ax1[0], 1.8, 0.2,True,True,False)
-pc21 = plot_ax("retraction", ax1[1], 2.0, 0.2, False,True,False)
+pc11 = plot_ax("protraction", ax1[0], 1.4, 0.2,True,True,False)
+pc21 = plot_ax("retraction", ax1[1], 1.8, 0.2, False,True,False)
 
 #ax1[0].set_xticklabels([])
 # ax1[1].set_xticklabels([])

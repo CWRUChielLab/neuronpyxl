@@ -125,34 +125,39 @@ sfigs[0].supxlabel("BMP phase",fontsize=label_fontsize,x=0.55)
 
 
 data_control = pd.read_csv(os.path.join(datapath, f"data_test_control.csv")).drop(["Unnamed: 0"], axis=1)
-tcontrol = data_control["t"]
-data_test_l = pd.read_csv(os.path.join(datapath, f"data_test_loaded.csv")).drop(["Unnamed: 0"], axis=1)
-ttest_l = data_test_l["t"]
+data_l = pd.read_csv(os.path.join(datapath, f"data_test_loaded.csv")).drop(["Unnamed: 0"], axis=1)
+data_ul = pd.read_csv(os.path.join(datapath, f"data_test_unloaded.csv")).drop(["Unnamed: 0"], axis=1)
 
-data_test_ul = pd.read_csv(os.path.join(datapath, f"data_test_unloaded.csv")).drop(["Unnamed: 0"], axis=1)
-ttest_ul = data_test_ul["t"]
 
-tvec = np.arange(0,np.max(tcontrol),0.01)
-vc_B31a = np.interp(tvec,tcontrol,data_control["V_B31a"])
-vc_B64a = np.interp(tvec,tcontrol,data_control["V_B64a"])
+def align_time(x,y,start_time,delta=10000):
+    x_shifted = x - start_time
+    mask = (x_shifted >= -delta) & (x_shifted <= delta)
+    return x_shifted[mask]/1000, y[mask]
 
-vt_B31a_l = np.interp(tvec,ttest_l,data_test_l["V_B31a"])
-vt_B64a_l = np.interp(tvec,ttest_l,data_test_l["V_B64a"])
-
-vt_B31a_ul = np.interp(tvec,ttest_ul,data_test_ul["V_B31a"])
-vt_B64a_ul = np.interp(tvec,ttest_ul,data_test_ul["V_B64a"])
-
-def get_tend(v):
-    return np.where(np.diff(np.signbit(v)))[0][-1]
-def get_tstart(v):
-    return np.where(np.diff(np.signbit(v)))[0][0]
-
-def get_t(tvec,v, pos):
-    if pos == "end":
-        return (tvec-tvec[get_tend(v)])/1000
-    if pos == "start":
-        return (tvec-tvec[get_tstart(v)])/1000
+def bmp_times(x,y,alignment):
+    zeros = np.where(np.diff(np.signbit(y)))[0]
+    zero_times = np.array(x[zeros])
+    i_end = np.where(np.diff(zero_times) > 4000)[0]
+    bmp_end = zero_times[i_end][1]
+    bmp_start = zero_times[i_end+1][1]
     
+    if alignment == "start":
+        return align_time(x,y,bmp_start)
+    return align_time(x,y,bmp_end)
+
+
+control = {"protraction": bmp_times(data_control["t"],data_control["V_B31a"],"end"),
+            "retraction": bmp_times(data_control["t"],data_control["V_B64a"],"start")
+           }
+
+loaded = {"protraction": bmp_times(data_l["t"],data_l["V_B31a"],"end"),
+            "retraction": bmp_times(data_l["t"],data_l["V_B64a"],"start")
+           }
+
+unloaded = {"protraction": bmp_times(data_ul["t"],data_ul["V_B31a"],"end"),
+            "retraction": bmp_times(data_ul["t"],data_ul["V_B64a"],"start")
+           }
+
 def plot_vertical_scalebar(ax,scalebar_length=100,bar_width=0.25,offset=0,yoffset=10):
     from matplotlib.patches import Rectangle
     # Get axis limits
@@ -177,30 +182,30 @@ colors = {"retraction": "teal", "protraction": "orangered"}
 for ax in ax2.flat:
     ax.set_xlim((-10, 10))
 
-ax2[0,0].plot(get_t(tvec,vc_B31a, "end"),vc_B31a, c=colors["protraction"])
+ax2[0,0].plot(*control["protraction"], c=colors["protraction"])
 ax2[0,0].set_ylabel("Control", fontsize=label_fontsize,rotation=0)
 ax2[0,0].set_title("Protraction", fontsize=title_fontsize)
 remove_axes2(ax2[0,0])
 
-ax2[1,0].plot(get_t(tvec,vt_B31a_l, "end"),vt_B31a_l, c=colors["protraction"])
+ax2[1,0].plot(*loaded["protraction"], c=colors["protraction"])
 ax2[1,0].set_ylabel("Loaded", fontsize=label_fontsize,rotation=0)
 remove_axes2(ax2[1,0])
 
-ax2[2,0].plot(get_t(tvec,vt_B31a_ul, "end"),vt_B31a_ul, c=colors["protraction"])
+ax2[2,0].plot(*unloaded["protraction"], c=colors["protraction"])
 ax2[2,0].set_ylabel("Unloaded", fontsize=label_fontsize,rotation=0)
 remove_axes2(ax2[2,0],x=True)
 
-ax2[0,1].plot(get_t(tvec,vc_B64a, "start"),vc_B64a, c=colors["retraction"])
+ax2[0,1].plot(*control["retraction"], c=colors["retraction"])
 ax2[0,1].set_title("Retraction", fontsize=title_fontsize)
 remove_axes2(ax2[0,1])
 
-ax2[1,1].plot(get_t(tvec,vt_B64a_l, "start"),vt_B64a_l, c=colors["retraction"])
+ax2[1,1].plot(*loaded["retraction"], c=colors["retraction"])
 remove_axes2(ax2[1,1])
 
-ax2[2,1].plot(get_t(tvec,vt_B64a_ul, "start"),vt_B64a_ul, c=colors["retraction"])
+ax2[2,1].plot(*unloaded["retraction"], c=colors["retraction"])
 remove_axes2(ax2[2,1],x=True)
 
-plot_vertical_scalebar(ax2[2,1],scalebar_length=50,bar_width=0.15,yoffset=20)
+plot_vertical_scalebar(ax2[2,1],scalebar_length=20,bar_width=0.15,yoffset=17)
 
 sfigs[1].supxlabel("Aligned time (s)",fontsize=label_fontsize,x=0.53)
 ############################### PLOT ####################################
