@@ -72,8 +72,8 @@ def add_arguments():
                               If both --syn and --vonly are passed, will default to --vonly.")
     parser.add_argument('--teq', type=float, default=1000.0,
                         help="Sets equilibration time to provided value. Defaults to 1000.0 ms.")
-    parser.add_argument('--cluster', action='store_true',
-                        help="If running on a cluster, will automatically generate the files without user input. Defaults to False.")
+    parser.add_argument('--compile', action='store_true',
+                        help="If --compile is included, will compile the mod files and then run the simnulation. Defaults to False.")
     args = parser.parse_args()
 
     ###################################################################
@@ -92,17 +92,17 @@ def add_arguments():
 # Define functions
 
 # Function to build mod files
-def gen_mods(file, cluster):
+def gen_mods(file):
     mb = modbuilder.ModBuilder(file)
-    mb.run(cluster)
+    mb.run()
     subprocess.run("nrnivmodl mod", shell=True, check=True)
 
 
 # Function to clear data directory before populating it
-def clear_dir(dir_path, cluster):
+def clear_dir(dir_path):
     if os.path.exists(dir_path):
         # Directory exists, empty it
-        del_dir = True if cluster else input(f"Clear out contents of {dir_path}? (y/n) ") == "y"
+        del_dir = input(f"Clear out contents of {dir_path}? (y/n) ") == "y"
         if not del_dir:
             sys.exit()
         shutil.rmtree(dir_path,ignore_errors=True)
@@ -113,7 +113,7 @@ def clear_dir(dir_path, cluster):
 
 def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:float=10000.,
             method:int=2, atol:float=1e-5, interp:float=-1, syn:bool=False, vonly:bool=False,
-            noise:tuple=None, teq:float=1000.0, cluster:bool=False,seed:bool=False):
+            noise:tuple=None, teq:float=1000.0, seed:bool=False, compile_mods:bool=True):
     """Runs a simulation from the provided file and simulation name (before .smu in Excel), provided that the mod files are properly compiled.
 
     Args:
@@ -135,6 +135,9 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
     assert step == -1 or step > 0, f"step={step} is not a valid simulation timestep Must be greater than 0."
     assert 0 < atol < 1, f"atol={atol} is not a valid error tolerance. Must be between 0 and 1."
     
+    if compile_mods:
+        gen_mods(file)
+
     # Set up and run simulation but setting object parameters to correct values
     nb = network.NetworkBuilder(params_file=file, sim_name=name, noise=noise, dt=step, atol=atol,
                                 integrator=method, eq_time=teq, simdur=duration, seed=seed)
@@ -148,7 +151,7 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
         results_folder = os.path.join(cwd, f"Data/{folder}")
     else:
         results_folder = os.path.join(cwd, f"Data/{name}_data")
-    clear_dir(results_folder, cluster) # Clear the directory so it is clean for the fresh data
+    clear_dir(results_folder) # Clear the directory so it is clean for the fresh data
     nb.run(voltage_only=vonly) # Run the simulation, passing in vonly.
     
     # Save data
@@ -196,7 +199,7 @@ def main():
     args = add_arguments()
     func = args.f
     if func == "gen_mods":
-        gen_mods(args.file, args.cluster)
+        gen_mods(args.file)
     elif func == "run_sim":
         run_sim(name=args.name,
                 file=args.file,
@@ -210,8 +213,8 @@ def main():
                 vonly=args.vonly,
                 noise=args.noise,
                 teq=args.teq,
-                cluster=args.cluster,
-                seed=args.seed
+                seed=args.seed,
+                compile_mods=args.compile
                 )
 
 ###################################################################
