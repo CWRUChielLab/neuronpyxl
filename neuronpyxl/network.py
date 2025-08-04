@@ -851,7 +851,8 @@ class NetworkBuilder:
         
         method = {
             1: "Backwards Euler",
-            2: "Crank-Nicholson"
+            2: "Crank-Nicholson",
+            3: "CVODE"
         }
         
         def get_timestep(dt):
@@ -865,7 +866,7 @@ class NetworkBuilder:
                     "Data saved to": f"./Data/{self.sim_name}_data/",
                     "NEURON finished in": f"{self.simtime} s",
                     "Simulation duration": f"{self.simdur} ms",
-                    "Integration method": method[self.integrator],
+                    "Integration method": method[self.integrator if self.dt > 0 else 3],
                     "Timestep": get_timestep(self.dt),
                     "Absolute error tolerance": self.atol,
                     "Number of cells": len(self.cells),

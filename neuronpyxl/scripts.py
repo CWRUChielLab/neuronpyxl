@@ -72,8 +72,6 @@ def add_arguments():
                               If both --syn and --vonly are passed, will default to --vonly.")
     parser.add_argument('--teq', type=float, default=1000.0,
                         help="Sets equilibration time to provided value. Defaults to 1000.0 ms.")
-    parser.add_argument('--compile', action='store_true',
-                        help="If --compile is included, will compile the mod files and then run the simnulation. Defaults to False.")
     args = parser.parse_args()
 
     ###################################################################
@@ -113,7 +111,7 @@ def clear_dir(dir_path):
 
 def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:float=10000.,
             method:int=2, atol:float=1e-5, interp:float=-1, syn:bool=False, vonly:bool=False,
-            noise:tuple=None, teq:float=1000.0, seed:bool=False, compile_mods:bool=True):
+            noise:tuple=None, teq:float=1000.0, seed:bool=False):
     """Runs a simulation from the provided file and simulation name (before .smu in Excel), provided that the mod files are properly compiled.
 
     Args:
@@ -134,9 +132,6 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
     assert duration > 0, f"duration={duration} is not a valid simulation duration. Must be greater than 0."
     assert step == -1 or step > 0, f"step={step} is not a valid simulation timestep Must be greater than 0."
     assert 0 < atol < 1, f"atol={atol} is not a valid error tolerance. Must be between 0 and 1."
-    
-    if compile_mods:
-        gen_mods(file)
 
     # Set up and run simulation but setting object parameters to correct values
     nb = network.NetworkBuilder(params_file=file, sim_name=name, noise=noise, dt=step, atol=atol,
@@ -213,8 +208,7 @@ def main():
                 vonly=args.vonly,
                 noise=args.noise,
                 teq=args.teq,
-                seed=args.seed,
-                compile_mods=args.compile
+                seed=args.seed
                 )
 
 ###################################################################
