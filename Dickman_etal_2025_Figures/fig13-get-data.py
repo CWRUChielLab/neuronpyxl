@@ -72,7 +72,7 @@ def durations(x,y):
     stddur = np.std(durs)
     return np.nan if meandur > 10000 else (meandur,stddur,len(durs))
 
-def set_params(nb:network.NetworkBuilder,v1,v2):
+def set_params(nb:network.Network,v1,v2):
     nb.cells["B64s"].section(0.5).g_neuronpyxl_kpp = v1
     nb.chemical_synapses["fast"]["B30"]["B63"]["synapse"].g = v2
 
@@ -87,7 +87,7 @@ results = {}
 for condition, vals in params.items():
     results.setdefault(condition,{"protraction": {},"retraction":{}})
 
-    nb = network.NetworkBuilder(
+    nb = network.Network(
         params_file=os.path.join(excelpath,"fig11-12-13.xlsx"),
         sim_name="BMP",noise=noise,dt=-1,integrator=2,atol=1e-3,
         eq_time=10000,simdur=140000,seed=True

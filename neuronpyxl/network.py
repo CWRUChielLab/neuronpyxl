@@ -1,11 +1,11 @@
 """
 This file is part of neuronpyxl.
 
-The NetworkBuilder class is the central class for neuronpyxl. It takes the simplified results from the
+The Network class is the central class for neuronpyxl. It takes the simplified results from the
 ControlReader and generates the entire network from that information, assuming that the correctly-named mod 
 files are already compiled (see ModBuilder). It also has capabilities to run simulations and record
 the data directly from NEURON. These functions can be accessed either through cmd_util.py or by creating
-a NetworkBuilder object and running the simulations from another .py file.
+a Network object and running the simulations from another .py file.
 
 Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
@@ -30,10 +30,10 @@ import copy
 import os
 import time
 from scipy.interpolate import CubicSpline
-from . import cell, reader
+from neuronpyxl import cell, reader
 from typing import Tuple
 
-class NetworkBuilder:
+class Network:
     def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float, eq_time: float, simdur:float, seed:bool):
         """_summary_
 
@@ -784,7 +784,7 @@ class NetworkBuilder:
     
     
     def get_interpolated_syn_data(self, tvec: iter) -> Tuple[dict]:
-        """Same as NetworkBuilder.get_interpolated_cell_data but interpolates synapse data
+        """Same as Network.get_interpolated_cell_data but interpolates synapse data
 
         Args:
             tvec (iter): time vector to interpolate to

@@ -3,12 +3,10 @@
 import sys
 import os
 sys.path.append("../")
-import pandas as pd
 import scienceplots
 import matplotlib.pyplot as plt
 import numpy as np
 from neuronpyxl import network
-from scipy.interpolate import griddata
 plt.style.use(["no-latex", "notebook"])
 
 excelpath = "../Excel_files"
@@ -50,7 +48,7 @@ def plot_vertical_scalebar(ax,scalebar_length=20,bar_width=0.25,offset=0,xoffset
     
 if __name__ == "__main__":
 
-    nb1 = network.NetworkBuilder(params_file=os.path.join(excelpath, excelfile), sim_name="synapse",
+    nb1 = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="synapse",
                                 noise=None,dt=-1,integrator=2,atol=1e-5,eq_time=1000,simdur=9000,seed=False)
 
     g = 0.05
@@ -67,7 +65,7 @@ if __name__ == "__main__":
     A2 = nb1.get_cell_data("A")
     B2 = nb1.get_cell_data("B")
 
-    nb2 = network.NetworkBuilder(params_file=os.path.join(excelpath, excelfile), sim_name="synapse2",
+    nb2 = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="synapse2",
                                 noise=None,dt=-1,integrator=2,atol=1e-5,eq_time=1000,simdur=9000,seed=False)
 
     g = 0.04

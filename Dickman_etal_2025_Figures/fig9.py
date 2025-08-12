@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import os
 import scienceplots
 import matplotlib.pyplot as plt
@@ -18,7 +17,7 @@ freq = 500
 weight = 1e-3
 tau = 5
 
-nb = network.NetworkBuilder(
+nb = network.Network(
         params_file=os.path.join(excelpath,excelfile),
         sim_name="nostim",
         noise=None,
@@ -34,7 +33,7 @@ nb.run()
 rest_potential = nb.get_cell_data("B4")["V"][-1]
 print(f"Rest potential: {rest_potential} mV")
 
-nb_noisy = network.NetworkBuilder(
+nb_noisy = network.Network(
         params_file=os.path.join(excelpath,excelfile),
         sim_name="nostim",
         noise=(freq,weight,tau),

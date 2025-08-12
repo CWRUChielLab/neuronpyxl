@@ -82,9 +82,9 @@ class MultiRun:
             length *= len(ranges[-1])
         return length, product(*ranges)
 
-    def create_obj_list(self, nb: network.NetworkBuilder):
+    def create_obj_list(self, nb: network.Network):
         """
-        Function to parse the variable names and convert to a NetworkBuilder Object
+        Function to parse the variable names and convert to a Network Object
         """
         obj_list = []
         params = [c for c in self.columns if c not in self.additional_cols]
@@ -130,7 +130,7 @@ class MultiRun:
         total_err = []
         total_std = []
         total_n = []
-        nb = network.NetworkBuilder(params_file=self.filename, sim_name=self.simname,\
+        nb = network.Network(params_file=self.filename, sim_name=self.simname,\
                                     noise=None, dt=-1, atol=1e-3, eq_time=10000, integrator=2,\
                                     simdur=self.simdur,seed=True)
 

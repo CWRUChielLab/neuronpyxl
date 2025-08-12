@@ -7,9 +7,7 @@ import pandas as pd
 import scienceplots
 import matplotlib.pyplot as plt
 import numpy as np
-import subprocess
 from neuronpyxl import network
-from scipy.interpolate import griddata
 plt.style.use(["no-latex", "notebook"])
 
 snnapdatapath = "/media/udickman/uri-external-drive/SNNAP_data/fig7"
@@ -56,7 +54,7 @@ if __name__ == "__main__":
     snnap_data.columns = ["t", "V_A", "nai_A", "V_B", "nai_B", "V_C", "nai_C"]
     tsnnap = np.asarray(snnap_data["t"])
 
-    nb = network.NetworkBuilder(params_file=os.path.join(excelpath, excelfile), sim_name="synapse",
+    nb = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="synapse",
                                 noise=None,dt=-1,integrator=2,atol=1e-5,eq_time=5000,simdur=13000,seed=False)
 
     nb.run(voltage_only=True)

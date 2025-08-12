@@ -21,7 +21,7 @@ along with neuronpyxl. If not, see <https://www.gnu.org/licenses/>.
 """
 
 ###################################################################
-from . import modbuilder, network
+from neuronpyxl import modbuilder, network
 import argparse
 import subprocess
 import os
@@ -134,7 +134,7 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
     assert 0 < atol < 1, f"atol={atol} is not a valid error tolerance. Must be between 0 and 1."
 
     # Set up and run simulation but setting object parameters to correct values
-    nb = network.NetworkBuilder(params_file=file, sim_name=name, noise=noise, dt=step, atol=atol,
+    nb = network.Network(params_file=file, sim_name=name, noise=noise, dt=step, atol=atol,
                                 integrator=method, eq_time=teq, simdur=duration, seed=seed)
     if syn and not vonly:
         nb.record_synaptic_currents = True

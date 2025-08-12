@@ -3,7 +3,7 @@ This file is part of pySNNAP.
 
 The Cell class treats each cell in NEURON as a custom object. Each Cell comes with a NEURON Section
 object, as well as other useful properties, such as I-V recordings and current clamps. This structure
-enables the NetworkBuilder class to seem more like a network, rather than leaving the cells as sections only.
+enables the Network class to seem more like a network, rather than leaving the cells as sections only.
 
 Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
@@ -184,7 +184,7 @@ class Cell:
     
     
     def get_data(self) -> dict:
-        """Recursively get data from the recording dictionary. Used by the NetworkBuilder.
+        """Recursively get data from the recording dictionary. Used by the Network.
 
         Returns:
             dict: Dictionary with all of the recordings. Direct key-val mapping depth of 1.

@@ -3,7 +3,6 @@
 import sys
 import os
 sys.path.append("../")
-from neuron import h
 import scienceplots
 import matplotlib.pyplot as plt
 import numpy as np
@@ -51,7 +50,7 @@ def plot_vertical_scalebar(ax,scalebar_length=10,bar_width=0.25,offset=0,yoffset
     
 
 if __name__ == "__main__":
-    nb = network.NetworkBuilder(params_file=os.path.join(excelpath, excelfile), sim_name="excitability",
+    nb = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="excitability",
                                 noise=None,dt=-1,integrator=2,atol=1e-5,eq_time=1000,simdur=9000,seed=False)
     nb.run()
     tvec = np.arange(0,9000,step=0.05)

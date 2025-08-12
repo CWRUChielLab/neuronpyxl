@@ -53,7 +53,7 @@ if __name__ == "__main__":
     snnap_data = pd.read_csv(os.path.join(snnapdatapath,"synapse_vsyn2.smu.out"), sep="\t").dropna(axis=1)
     snnap_data.columns = ["t", "VA", "", "VB"]
 
-    nb = network.NetworkBuilder(params_file=os.path.join(excelpath, excelfile), sim_name="main",
+    nb = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="main",
                                 noise=None,dt=0.005,integrator=2,atol=1e-5,eq_time=0,simdur=6000,seed=False)
 
     nb.run(voltage_only=True)

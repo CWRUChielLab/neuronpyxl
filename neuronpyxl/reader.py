@@ -23,7 +23,6 @@ along with neuronpyxl. If not, see <https://www.gnu.org/licenses/>.
 import pandas as pd
 import xlsxwriter
 import warnings
-import gc
 warnings.simplefilter(action='ignore', category=UserWarning)
 
 class ControlReader:

@@ -20,7 +20,7 @@ import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
 
 
-def set_params(nb:network.NetworkBuilder,v1,v2):
+def set_params(nb:network.Network,v1,v2):
     nb.cells["B64s"].section(0.5).g_neuronpyxl_kpp = v1
     nb.chemical_synapses["fast"]["B30"]["B63"]["synapse"].g = v2
 
@@ -62,7 +62,7 @@ params = {'loaded': {
         }
 }
 
-nb = network.NetworkBuilder(
+nb = network.Network(
         params_file=os.path.join(excelpath,excelfile),
         sim_name="BMP",noise=noise_params,dt=-1,integrator=2,atol=1e-5,
         eq_time=10000,simdur=150000,seed=False

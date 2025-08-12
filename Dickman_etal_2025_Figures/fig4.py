@@ -3,13 +3,11 @@
 import sys
 import os
 sys.path.append("../")
-from neuron import h
 import scienceplots
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from neuronpyxl import network
-from scipy.interpolate import CubicSpline
 from scipy.stats import linregress
 from matplotlib.lines import Line2D
 plt.style.use(["no-latex", "notebook"])
@@ -30,7 +28,7 @@ def get_v_nrn(tvec,dt):
     Returns:
         _type_: interpolated voltage trace corresponding to tvec
     """
-    nb = network.NetworkBuilder(params_file=os.path.join(excelpath, excelfile), sim_name="main",
+    nb = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="main",
                                 noise=None, integrator=2, eq_time=0,dt=dt,atol=1e-5,simdur=9000,seed=False)
     nb.run()
     data = nb.get_interpolated_cell_data("cell",tvec)
@@ -100,7 +98,7 @@ if __name__ == "__main__":
 
     tvec = np.linspace(0,9000,num=10000)
     v_an = get_v_an(tvec, 2000, 7000, -60, 2, 0.1, 0.007)
-    nb = network.NetworkBuilder(params_file=os.path.join(excelpath, excelfile), sim_name="main",
+    nb = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="main",
                                     noise=None, integrator=2, eq_time=0,dt=-1,atol=1e-6,simdur=9000,seed=False)
     nb.run(voltage_only=True)
     data = nb.get_interpolated_cell_data("cell",tvec)
