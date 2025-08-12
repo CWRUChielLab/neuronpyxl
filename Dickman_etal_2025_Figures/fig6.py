@@ -48,32 +48,32 @@ def plot_vertical_scalebar(ax,scalebar_length=20,bar_width=0.25,offset=0,xoffset
     
 if __name__ == "__main__":
 
-    nb1 = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="synapse",
+    nw1 = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="synapse",
                                 noise=None,dt=-1,integrator=2,atol=1e-5,eq_time=1000,simdur=9000,seed=False)
 
     g = 0.05
-    nb1.electrical_synapses["A"]["B"].g = g
-    nb1.electrical_synapses["B"]["A"].g = g
-    nb1.run()
-    A1 = nb1.get_cell_data("A")
-    B1 = nb1.get_cell_data("B")
+    nw1.electrical_synapses["A"]["B"].g = g
+    nw1.electrical_synapses["B"]["A"].g = g
+    nw1.run()
+    A1 = nw1.get_cell_data("A")
+    B1 = nw1.get_cell_data("B")
 
     g = 0.1
-    nb1.electrical_synapses["A"]["B"].g = g
-    nb1.electrical_synapses["B"]["A"].g = g
-    nb1.run()
-    A2 = nb1.get_cell_data("A")
-    B2 = nb1.get_cell_data("B")
+    nw1.electrical_synapses["A"]["B"].g = g
+    nw1.electrical_synapses["B"]["A"].g = g
+    nw1.run()
+    A2 = nw1.get_cell_data("A")
+    B2 = nw1.get_cell_data("B")
 
-    nb2 = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="synapse2",
+    nw2 = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="synapse2",
                                 noise=None,dt=-1,integrator=2,atol=1e-5,eq_time=1000,simdur=9000,seed=False)
 
     g = 0.04
-    nb2.electrical_synapses["A"]["B"].g = g
-    nb2.electrical_synapses["B"]["A"].g = g
-    nb2.run()
-    A3 = nb2.get_cell_data("A")
-    B3 = nb2.get_cell_data("B")
+    nw2.electrical_synapses["A"]["B"].g = g
+    nw2.electrical_synapses["B"]["A"].g = g
+    nw2.run()
+    A3 = nw2.get_cell_data("A")
+    B3 = nw2.get_cell_data("B")
 
     bw = 0.008
     fig = plt.figure(figsize=(18,10),constrained_layout=True)

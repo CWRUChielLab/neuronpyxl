@@ -54,14 +54,14 @@ if __name__ == "__main__":
     snnap_data.columns = ["t", "V_A", "nai_A", "V_B", "nai_B", "V_C", "nai_C"]
     tsnnap = np.asarray(snnap_data["t"])
 
-    nb = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="synapse",
+    nw = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="synapse",
                                 noise=None,dt=-1,integrator=2,atol=1e-5,eq_time=5000,simdur=13000,seed=False)
 
-    nb.run(voltage_only=True)
+    nw.run(voltage_only=True)
 
-    A = nb.get_cell_data("A")
-    B = nb.get_cell_data("B")
-    C = nb.get_cell_data("C")
+    A = nw.get_cell_data("A")
+    B = nw.get_cell_data("B")
+    C = nw.get_cell_data("C")
     t = np.array(A["t"]) / 1000
 
 

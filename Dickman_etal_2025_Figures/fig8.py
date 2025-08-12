@@ -53,14 +53,14 @@ if __name__ == "__main__":
     snnap_data = pd.read_csv(os.path.join(snnapdatapath,"synapse_vsyn2.smu.out"), sep="\t").dropna(axis=1)
     snnap_data.columns = ["t", "VA", "", "VB"]
 
-    nb = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="main",
+    nw = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="main",
                                 noise=None,dt=0.005,integrator=2,atol=1e-5,eq_time=0,simdur=6000,seed=False)
 
-    nb.run(voltage_only=True)
+    nw.run(voltage_only=True)
 
     tvec = np.array(snnap_data["t"])*1000
-    A = nb.get_interpolated_cell_data("A",tvec)
-    B = nb.get_interpolated_cell_data("B",tvec)
+    A = nw.get_interpolated_cell_data("A",tvec)
+    B = nw.get_interpolated_cell_data("B",tvec)
     t = np.array(A["t"]) / 1000
 
     times = np.array([(850, 1000), (1350, 1500), (1850, 2000), (2350, 2500), (2850, 3000), (3350, 3500), (3850, 4000), (4350, 4500), (4850, 5000)])

@@ -49,7 +49,7 @@ def get_params():
 
 def durations(x,y):
     try:
-        crossings = np.where(np.diff(np.signbit(y)))[0]
+        crossings = np.where(np.diff(np.signwit(y)))[0]
         x_zero = []
         for i in crossings:
             x_zero.append(np.interp(0, [y[i], y[i+1]], [x[i], x[i+1]]))
@@ -72,9 +72,9 @@ def durations(x,y):
     stddur = np.std(durs)
     return np.nan if meandur > 10000 else (meandur,stddur,len(durs))
 
-def set_params(nb:network.Network,v1,v2):
-    nb.cells["B64s"].section(0.5).g_neuronpyxl_kpp = v1
-    nb.chemical_synapses["fast"]["B30"]["B63"]["synapse"].g = v2
+def set_params(nw:network.Network,v1,v2):
+    nw.cells["B64s"].section(0.5).g_neuronpyxl_kpp = v1
+    nw.chemical_synapses["fast"]["B30"]["B63"]["synapse"].g = v2
 
 params = get_params()
 
@@ -87,16 +87,16 @@ results = {}
 for condition, vals in params.items():
     results.setdefault(condition,{"protraction": {},"retraction":{}})
 
-    nb = network.Network(
+    nw = network.Network(
         params_file=os.path.join(excelpath,"fig11-12-13.xlsx"),
         sim_name="BMP",noise=noise,dt=-1,integrator=2,atol=1e-3,
         eq_time=10000,simdur=140000,seed=True
         )
-    set_params(nb,vals[param1],vals[param2])
-    nb.run(voltage_only=True)
+    set_params(nw,vals[param1],vals[param2])
+    nw.run(voltage_only=True)
     
-    prot_data = nb.get_cell_data("B31a")
-    ret_data = nb.get_cell_data("B64a")
+    prot_data = nw.get_cell_data("B31a")
+    ret_data = nw.get_cell_data("B64a")
     prot_result = durations(prot_data["t"],prot_data["V"])
     ret_result = durations(ret_data["t"],ret_data["V"])
 
@@ -110,7 +110,7 @@ for condition, vals in params.items():
             results[condition]["protraction"]["n"] = prot_result
     results[condition]["retraction"]["dur"],results[condition]["retraction"]["err"],\
             results[condition]["retraction"]["n"] = ret_result
-    del nb
+    del nw
 
 df = pd.DataFrame.from_dict({(level1, level2, level3): value
                              for level1, inner_dict in results.items()

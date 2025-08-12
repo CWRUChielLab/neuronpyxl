@@ -28,12 +28,12 @@ def get_v_nrn(tvec,dt):
     Returns:
         _type_: interpolated voltage trace corresponding to tvec
     """
-    nb = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="main",
+    nw = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="main",
                                 noise=None, integrator=2, eq_time=0,dt=dt,atol=1e-5,simdur=9000,seed=False)
-    nb.run()
-    data = nb.get_interpolated_cell_data("cell",tvec)
+    nw.run()
+    data = nw.get_interpolated_cell_data("cell",tvec)
     
-    return np.array(data["V"]),nb.simtime
+    return np.array(data["V"]),nw.simtime
 
 def get_v_snnap(dt):
     """Function to read data from the SNNAP file corresponding to the timestep dt.
@@ -98,10 +98,10 @@ if __name__ == "__main__":
 
     tvec = np.linspace(0,9000,num=10000)
     v_an = get_v_an(tvec, 2000, 7000, -60, 2, 0.1, 0.007)
-    nb = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="main",
+    nw = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="main",
                                     noise=None, integrator=2, eq_time=0,dt=-1,atol=1e-6,simdur=9000,seed=False)
-    nb.run(voltage_only=True)
-    data = nb.get_interpolated_cell_data("cell",tvec)
+    nw.run(voltage_only=True)
+    data = nw.get_interpolated_cell_data("cell",tvec)
     v_nrn_var = data["V"]
     err_var = err(v_an,v_nrn_var)
 

@@ -135,7 +135,7 @@ def align_time(x,y,start_time,delta=10000):
     return x_shifted[mask]/1000, y[mask]
 
 def bmp_times(x,y,alignment):
-    zeros = np.where(np.diff(np.signbit(y)))[0]
+    zeros = np.where(np.diff(np.signwit(y)))[0]
     zero_times = np.array(x[zeros])
     i_end = np.where(np.diff(zero_times) > 4000)[0]
     bmp_end = zero_times[i_end][1]

@@ -50,11 +50,11 @@ def plot_vertical_scalebar(ax,scalebar_length=10,bar_width=0.25,offset=0,yoffset
     
 
 if __name__ == "__main__":
-    nb = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="excitability",
+    nw = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="excitability",
                                 noise=None,dt=-1,integrator=2,atol=1e-5,eq_time=1000,simdur=9000,seed=False)
-    nb.run()
+    nw.run()
     tvec = np.arange(0,9000,step=0.05)
-    data = pd.DataFrame(nb.get_interpolated_cell_data("B4",tvec))
+    data = pd.DataFrame(nw.get_interpolated_cell_data("B4",tvec))
 
     snnapdata = pd.read_csv(os.path.join(snnapdatapath,"excitability.smu.out"), sep="\t").dropna(axis=1).dropna(axis=0)
     snnapdata.columns = ["t", "V", "I_leak", "I_na", "I_k", "I_kcas", "cai", "I_app"]

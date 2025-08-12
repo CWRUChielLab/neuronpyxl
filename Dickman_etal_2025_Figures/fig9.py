@@ -17,7 +17,7 @@ freq = 500
 weight = 1e-3
 tau = 5
 
-nb = network.Network(
+nw = network.Network(
         params_file=os.path.join(excelpath,excelfile),
         sim_name="nostim",
         noise=None,
@@ -29,11 +29,11 @@ nb = network.Network(
         simdur=10000
         )
 
-nb.run()
-rest_potential = nb.get_cell_data("B4")["V"][-1]
+nw.run()
+rest_potential = nw.get_cell_data("B4")["V"][-1]
 print(f"Rest potential: {rest_potential} mV")
 
-nb_noisy = network.Network(
+nw_noisy = network.Network(
         params_file=os.path.join(excelpath,excelfile),
         sim_name="nostim",
         noise=(freq,weight,tau),
@@ -44,9 +44,9 @@ nb_noisy = network.Network(
         eq_time=1000,
         simdur=50000
         )
-nb_noisy.run()
+nw_noisy.run()
 
-data = nb_noisy.get_cell_data("B4")
+data = nw_noisy.get_cell_data("B4")
 t = data["t"] / 1000
 v = data["V"]
 inoise = data["I_cap"]

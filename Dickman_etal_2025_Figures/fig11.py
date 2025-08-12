@@ -20,9 +20,9 @@ import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
 
 
-def set_params(nb:network.Network,v1,v2):
-    nb.cells["B64s"].section(0.5).g_neuronpyxl_kpp = v1
-    nb.chemical_synapses["fast"]["B30"]["B63"]["synapse"].g = v2
+def set_params(nw:network.Network,v1,v2):
+    nw.cells["B64s"].section(0.5).g_neuronpyxl_kpp = v1
+    nw.chemical_synapses["fast"]["B30"]["B63"]["synapse"].g = v2
 
 legend_labels = {"forestgreen": "Control",
                  "orangered": "Protraction",
@@ -62,19 +62,19 @@ params = {'loaded': {
         }
 }
 
-nb = network.Network(
+nw = network.Network(
         params_file=os.path.join(excelpath,excelfile),
         sim_name="BMP",noise=noise_params,dt=-1,integrator=2,atol=1e-5,
         eq_time=10000,simdur=150000,seed=False
         )
 
 condition = "control"
-#set_params(nb,params[condition][param1],params[condition][param2])
-nb.run(voltage_only=True)
+#set_params(nw,params[condition][param1],params[condition][param2])
+nw.run(voltage_only=True)
 
 data = {}
-for name,_ in nb.cells.items():
-    cell_data = nb.get_cell_data(name)
+for name,_ in nw.cells.items():
+    cell_data = nw.get_cell_data(name)
     if "t" not in data:
         data["t"] = cell_data["t"]
     data[f"V_{name}"] = cell_data["V"]
@@ -141,7 +141,7 @@ def plot_vertical_scalebar(ax,scalebar_length=100,bar_width=0.25,xoffset=0,yoffs
             
             
 fig,ax = plt.subplots(num_cells,1,figsize=(12,10),sharey=True,constrained_layout=True)
-plot_bmps(data,ax,all_cells, (0,nb.simdur/1000),False,True)
+plot_bmps(data,ax,all_cells, (0,nw.simdur/1000),False,True)
 xtickson(ax[-1],[0,30,60,90,120,150])
 plot_vertical_scalebar(ax[-2],yoffset=0)
 fig.supxlabel("Time (s)",x=0.53,y=0.04)

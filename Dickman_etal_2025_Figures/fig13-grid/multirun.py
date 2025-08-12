@@ -39,7 +39,7 @@ class MultiRun:
 
     def error_function(self,x0,y0,x,y):
         try:
-            crossings = np.where(np.diff(np.signbit(y)))[0]
+            crossings = np.where(np.diff(np.signwit(y)))[0]
             x_zero = []
             for i in crossings:
                 x_zero.append(np.interp(0, [y[i], y[i+1]], [x[i], x[i+1]]))
@@ -82,7 +82,7 @@ class MultiRun:
             length *= len(ranges[-1])
         return length, product(*ranges)
 
-    def create_obj_list(self, nb: network.Network):
+    def create_obj_list(self, nw: network.Network):
         """
         Function to parse the variable names and convert to a Network Object
         """
@@ -93,11 +93,11 @@ class MultiRun:
             ptype = split_param[0]
             match ptype:
                 case "cs":
-                    obj = nb.chemical_synapses[split_param[4]][split_param[2]][split_param[3]]["synapse"]
+                    obj = nw.chemical_synapses[split_param[4]][split_param[2]][split_param[3]]["synapse"]
                 case "es":
-                    obj = nb.electrical_synapses[split_param[2]][split_param[3]]
+                    obj = nw.electrical_synapses[split_param[2]][split_param[3]]
                 case "vdg":
-                    obj = getattr(nb.cells[split_param[2]].section(0.5), f"{self.prefix}{split_param[3]}")
+                    obj = getattr(nw.cells[split_param[2]].section(0.5), f"{self.prefix}{split_param[3]}")
                 case _:
                     raise ValueError(f"Parameter type '{ptype}' is invalid in paramgrid. Must be one of 'cs', 'es', or 'vdg'.")
             obj_list.append((obj, split_param[1]))
@@ -130,20 +130,20 @@ class MultiRun:
         total_err = []
         total_std = []
         total_n = []
-        nb = network.Network(params_file=self.filename, sim_name=self.simname,\
+        nw = network.Network(params_file=self.filename, sim_name=self.simname,\
                                     noise=None, dt=-1, atol=1e-3, eq_time=10000, integrator=2,\
                                     simdur=self.simdur,seed=True)
 
-        object_list = self.create_obj_list(nb)
+        object_list = self.create_obj_list(nw)
         self.set_param_values(object_list, values_list)
 
-        nb.run()
+        nw.run()
         t1 = time.time()
         with open(self.log_path, "a") as log:
             log.write(f"Simulation {i} took {t1 - t0} seconds\n")
 
         for cell_name, (x0, y0) in data0.items():
-            data = nb.get_cell_data(cell_name)
+            data = nw.get_cell_data(cell_name)
             try: # match the time range of the testing data
                 indices = np.where(data["t"] > x0[0])
                 x = data["t"][indices]
