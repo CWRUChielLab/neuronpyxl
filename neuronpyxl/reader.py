@@ -25,7 +25,7 @@ import xlsxwriter
 import warnings
 warnings.simplefilter(action='ignore', category=UserWarning)
 
-class ControlReader:
+class ExcelReader:
     def __init__(self, filename, sim_name, nrows):
         """Helper class to handle reading the "control.xlsx" spreadsheet for running SNNAP simulations via the Network class.
             The spreadsheet must be used in the exact format provided to be read in properly without errors.

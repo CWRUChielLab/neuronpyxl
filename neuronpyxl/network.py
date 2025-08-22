@@ -122,7 +122,7 @@ class Network:
         Args:
             file (pd.ExcelFile): an Excel file read in by Pandas.
         """
-        self.reader = reader.ControlReader(file, self.sim_name, 21)
+        self.reader = reader.ExcelReader(file, self.sim_name, 21)
         self.add_cells_from_reader()
         print("Loading simulation parameters...")
         self.feed_pools_from_reader()
