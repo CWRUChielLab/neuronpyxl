@@ -140,10 +140,10 @@ def plot_vertical_scalebar(ax,scalebar_length=100,bar_width=0.25,xoffset=0,yoffs
             va='center', ha='right', color='black', fontsize=12)
             
             
-fig,ax = plt.subplots(num_cells,1,figsize=(12,10),sharey=True,constrained_layout=True)
+fig,ax = plt.subplots(num_cells,1,figsize=(14,10),sharey=True,constrained_layout=True)
 plot_bmps(data,ax,all_cells, (0,nw.simdur/1000),False,True)
 xtickson(ax[-1],[0,30,60,90,120,150])
-plot_vertical_scalebar(ax[-2],yoffset=0)
+plot_vertical_scalebar(ax[-2],yoffset=30)
 fig.supxlabel("Time (s)",x=0.53,y=0.04)
 
 for color, label in legend_labels.items():
@@ -154,7 +154,8 @@ ax[-1].legend(
     loc='upper center',
     bbox_to_anchor=(0.5, -1.2),  # Centered, adjust vertical position if needed
     ncol=len(legend_labels),     # All in one row
-    frameon=False                 # Optional: removes legend box
+    frameon=False,                 # Optional: removes legend box,
+    fontsize=14
 )
 
 fig.savefig(os.path.join(figpath,f"{fig_prefix}_cpg_updated{'' if noise_params is None else '_noise'}.jpg"),dpi=300)

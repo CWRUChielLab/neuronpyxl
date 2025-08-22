@@ -129,11 +129,11 @@ def plot_ax(bmp, ax, sigma, delta, ylabel=True, contour=True,cv=False):
                    edgecolors="white", s=300, linewidths=1.5,alpha=1,zorder=2)
     return mesh
 
-fig,ax1 = plt.subplots(1,2,figsize=(10,10), constrained_layout=True)
+fig,ax1 = plt.subplots(1,2,figsize=(14,10), constrained_layout=True)
 
 # PLOT BMP DURATIONS
 pc11 = plot_ax("protraction", ax1[0], 1.4, 0.2,True,True,False)
-pc21 = plot_ax("retraction", ax1[1], 1.8, 0.2, False,True,False)
+pc21 = plot_ax("retraction", ax1[1], 1.5, 0.2, False,True,False)
 
 #ax1[0].set_xticklabels([])
 # ax1[1].set_xticklabels([])
@@ -148,16 +148,19 @@ error = "cv"
 pc12 = plot_ax(f"{error}1", ax2[0], 1.5, 0.1,True,False,False if error == "std" else True)
 pc22 = plot_ax(f"{error}2", ax2[1], 2.5, 0.1, False,False,False if error == "std" else True)
 """
-ax1[0].set_xlabel(r"$\bar{g}$ of slow potassium in B64s ($\mu$S)")
-ax1[0].set_ylabel(r"$\bar{g}$ of B30 to B63 connection ($\mu$S)")
-ax1[1].set_xlabel(r"$\bar{g}$ of slow potassium in B64s ($\mu$S)")
+ax1[0].set_xlabel(r"$\bar{g}$ of slow potassium in B64s ($\mu$S)",fontsize=16)
+ax1[0].set_ylabel(r"$\bar{g}$ of B30 to B63 connection ($\mu$S)",fontsize=16)
+ax1[1].set_xlabel(r"$\bar{g}$ of slow potassium in B64s ($\mu$S)",fontsize=16)
+ax1[0].tick_params(axis="x",labelsize=16)
+ax1[1].tick_params(axis="x",labelsize=16)
+ax1[0].tick_params(axis="y",labelsize=16)
 
 orientation = "vertical"
 location = "right"
 label = "Standard deviation (s)" if error == "std" else "Coefficient of Variation"
 #fig.colorbar(pc12, ax=ax2, shrink=0.9, location=location,\
         #       pad=0.05,orientation=orientation,label=label)
-fig.colorbar(pc11, ax=ax1, shrink=0.79, location=location,\
+fig.colorbar(pc11, ax=ax1, shrink=0.77, location=location,\
         pad=0.05,orientation=orientation,label="Phase duration (s)")
 
 legend_labels = ["Loaded", "Unloaded"]

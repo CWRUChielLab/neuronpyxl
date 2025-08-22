@@ -4,8 +4,8 @@
 
 snnapdatapath = "/media/udickman/uri-external-drive/SNNAP_data/fig10"
 datapath = "/home/udickman/Desktop/projects/cwru/neuronpyxl/Dickman_etal_2025_Figures/Data"
-excelpath = "../Excel_files"
-figpath = "../figs"
+excelpath = "./Excel_files"
+figpath = "./figs"
 fig_prefix = "Dickman_etal_Results"
 excelfile = "fig10.xlsx"
 
@@ -133,8 +133,8 @@ if __name__ == "__main__":
     handles.extend(extension)
 
     fig.legend(handles=handles,loc='lower center',frameon=False,fancybox=False, 
-            shadow=False,ncol=5,bbox_to_anchor=(0.5, -0.06))
+            shadow=False,ncol=5,bbox_to_anchor=(0.5, -0.06),fontsize=14)
 
-    plot_vertical_scalebar(ax2[-2],bar_width=0.3,yoffset=10,xoffset=0)
+    plot_vertical_scalebar(ax2[-2],bar_width=0.3,yoffset=30,xoffset=0)
 
     fig.savefig(os.path.join(figpath,f"{fig_prefix}_full_network.jpg"), bbox_inches='tight', dpi=300)

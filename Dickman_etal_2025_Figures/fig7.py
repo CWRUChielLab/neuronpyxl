@@ -11,8 +11,8 @@ from neuronpyxl import network
 plt.style.use(["no-latex", "notebook"])
 
 snnapdatapath = "/media/udickman/uri-external-drive/SNNAP_data/fig7"
-excelpath = "../Excel_files"
-figpath = "../figs"
+excelpath = "./Excel_files"
+figpath = "./figs"
 fig_prefix = "Dickman_etal_Results"
 excelfile = "fig7.xlsx"
 
@@ -50,6 +50,9 @@ def plot_vertical_scalebar(ax,scalebar_length=20,bar_width=0.25,offset=0,xoffset
     
 if __name__ == "__main__":
 
+    fs = 14
+    lw = 3
+
     snnap_data = pd.read_csv(os.path.join(snnapdatapath,"synapse.smu.out"), sep="\t").dropna(axis=1)
     snnap_data.columns = ["t", "V_A", "nai_A", "V_B", "nai_B", "V_C", "nai_C"]
     tsnnap = np.asarray(snnap_data["t"])
@@ -68,22 +71,22 @@ if __name__ == "__main__":
     colors = ["red", "teal", "orchid"]
     snnapcolor = "dodgerblue"
     nrncolor = "orangered"
-    fig, ax = plt.subplots(3, 1, figsize=(14,8),constrained_layout=True)
-    ax[0].plot(t, A["V"], color=nrncolor,label="NEURON")
-    ax[0].plot(tsnnap, snnap_data["V_A"], label="SNNAP", color=snnapcolor,linestyle="--")
-    ax[0].set_ylabel("A",rotation=0)
-    ax[0].legend(frameon=False)
+    fig, ax = plt.subplots(3, 1, figsize=(14,10),constrained_layout=True)
+    ax[0].plot(t, A["V"], color=nrncolor,label="NEURON",linewidth=lw)
+    ax[0].plot(tsnnap, snnap_data["V_A"], label="SNNAP", color=snnapcolor,linestyle="--",linewidth=lw)
+    # ax[0].set_ylabel("Neuron A",rotation=0,fontsize=20)
+    ax[0].legend(frameon=False,fontsize=20)
 
-    ax[1].plot(t, B["V"],color=nrncolor)
-    ax[1].plot(tsnnap, snnap_data["V_B"], color=snnapcolor,linestyle="--")
-    ax[1].set_ylabel("B",rotation=0)
+    ax[1].plot(t, B["V"],color=nrncolor,linewidth=lw)
+    ax[1].plot(tsnnap, snnap_data["V_B"], color=snnapcolor,linestyle="--",linewidth=lw)
+    # ax[1].set_ylabel("Neuron B",rotation=0,fontsize=20)
 
-    ax[2].plot(t, C["V"],color=nrncolor)
-    ax[2].plot(tsnnap, snnap_data["V_C"], color=snnapcolor,linestyle="--")
-    ax[2].set_ylabel("C",rotation=0)
+    ax[2].plot(t, C["V"],color=nrncolor,linewidth=lw)
+    ax[2].plot(tsnnap, snnap_data["V_C"], color=snnapcolor,linestyle="--",linewidth=lw)
+    # ax[2].set_ylabel("Neuron C",rotation=0,fontsize=20)
 
-    ax[2].set_xlabel("Time (s)")
-    ax[2].set_xticks(np.arange(0,14,step=2,dtype=int))
+    ax[2].set_xlabel("Time (s)",fontsize=fs)
+    ax[2].set_xticks(np.arange(0,14,step=0.5))
 
     for a in ax:
         a.set_xlim((0,13))
@@ -93,6 +96,6 @@ if __name__ == "__main__":
     remove_axes(ax[2],remove_x=False,remove_y=True)
 
     plot_vertical_scalebar(ax[2],scalebar_length=50,bar_width=0.025,xoffset=0.1,yoffset=20)
-
+    plt.show()
     # plt.tight_layout(pad=2.0, w_pad=0.5, h_pad=0.5)
     fig.savefig(os.path.join(figpath,f"{fig_prefix}_network_plast.jpg"), bbox_inches="tight",dpi=300)

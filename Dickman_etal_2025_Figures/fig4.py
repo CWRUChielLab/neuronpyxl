@@ -2,7 +2,7 @@
 
 import sys
 import os
-sys.path.append("../")
+#sys.path.append("../")
 import scienceplots
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,8 +13,8 @@ from matplotlib.lines import Line2D
 plt.style.use(["no-latex", "notebook"])
 
 snnapdatapath = "/media/udickman/uri-external-drive/SNNAP_data/fig4"
-excelpath = "../Excel_files"
-figpath = "../figs"
+excelpath = "./Excel_files"
+figpath = "./figs"
 fig_prefix = "Dickman_etal_Results"
 excelfile = "fig4.xlsx"
 
@@ -115,40 +115,42 @@ if __name__ == "__main__":
     ax1.plot(t_snnap,v_nrn,label="NEURON",color="orangered",linestyle="dashed",linewidth=3)
     ax1.plot(t_snnap,v_an,label="Exact",color="teal",linestyle="dotted",linewidth=3)
     ax1.legend(loc="upper left",frameon=False)
-    ax1.set_xlabel("Time (s)")
-    ax1.set_ylabel("Voltage (mV)")
+    ax1.set_xlabel("Time (s)",fontsize=14)
+    ax1.set_ylabel("Voltage (mV)",fontsize=14)
     ax1.set_ylim((-63,-34))
     remove_axes(ax1)
-    ax1.set_xticks([0,2,4,6,8,10])
+    ax1.set_xticks([0,2,4,6,8])
     ax1.set_yticks([-60,-50,-40,-30])
 
-    lw = 1
+    lw = 1.5
     ls = "dashed"
     m = "^"
-    s = 70
-    a = 0.6
-    ec = "black"
+    s = 100
+    a = 1.0
+    ec = "none"
 
     # Plot snnap, nrn, exact against each other for different epochs
     x = np.log10(dt_list)
     y_snnap = np.log10(err_analytical["snnap"])
     y_nrn = np.log10(err_analytical["nrn"])
     y_nrn_snnap = np.log10(err_nrn_snnap)
-    ax2.plot(x,linearfit(x,y_nrn_snnap),linestyle=ls,color="teal",alpha=a,linewidth=lw)
+    #ax2.plot(x,linearfit(x,y_nrn_snnap),linestyle=ls,color="teal",alpha=a,linewidth=lw)
     ax2.plot(x,linearfit(x,y_snnap),linestyle=ls,color="dodgerblue",alpha=a,linewidth=lw)
     ax2.plot(x,linearfit(x,y_nrn),linestyle=ls,color="red",alpha=a,linewidth=lw)
 
     ax2.scatter(x,y_snnap,c="dodgerblue",s=s,zorder=3,marker=m,edgecolors=ec,alpha=a,label='SNNAP vs. Exact')
     ax2.scatter(x,y_nrn,c="red",s=s,zorder=2,marker=m,edgecolors=ec,alpha=a,label='NEURON vs. Exact')
-    ax2.scatter(x,y_nrn_snnap,c="teal",s=s,zorder=2,marker=m,edgecolors=ec,alpha=a,label='NEURON vs. SNNAP')
+    #ax2.scatter(x,y_nrn_snnap,c="teal",s=s,zorder=2,marker=m,edgecolors=ec,alpha=a,label='NEURON vs. SNNAP')
 
-    ax2.hlines([np.log10(err_var)],-3,-1,linestyle="dotted",color="red",linewidth=2)
+    #ax2.hlines([np.log10(err_var)],-3,-1,linestyle="dotted",color="red",linewidth=2)
 
-    ax2.text(-2.4, -6.1, "NEURON Variable dt vs. Exact", va='bottom', ha='left', color="black",fontsize=12)
+    print(np.log10(err_var))
+
+    #ax2.text(-2.4, -6.1, "NEURON Variable dt vs. Exact", va='bottom', ha='left', color="black",fontsize=12)
     ax2.set_xticks([-3,-2,-1],[r"$10^{-3}$",r"$10^{-2}$",r"$10^{-1}$"])
     ax2.set_yticks([-2,-3,-4,-5,-6],[r"$10^{-2}$",r"$10^{-3}$",r"$10^{-4}$",r"$10^{-5}$",r"$10^{-6}$"])
     remove_axes(ax2)
-    custom_line = Line2D([0], [0], color='black', linestyle='--', linewidth=1,label="Linear fit")
+    custom_line = Line2D([0], [0], color='black', linestyle='--', linewidth=2,label="Linear fit")
     ax2.legend(handles=plt.gca().get_legend_handles_labels()[0] + [custom_line],loc="upper left",frameon=False)
 
     ax2.set_ylabel("RMSE", fontsize=16)

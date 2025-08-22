@@ -49,7 +49,7 @@ def get_params():
 
 def durations(x,y):
     try:
-        crossings = np.where(np.diff(np.signwit(y)))[0]
+        crossings = np.where(np.diff(np.signbit(y)))[0]
         x_zero = []
         for i in crossings:
             x_zero.append(np.interp(0, [y[i], y[i+1]], [x[i], x[i+1]]))

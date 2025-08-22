@@ -26,12 +26,12 @@ def remove_axes2(ax, x=False):
     ax.set_yticks([])
     ax.tick_params(right=False,top=False,left=False,bottom=x)
 
-tick_fontsize = 12
-label_fontsize = 14
-title_fontsize=14
-legend_fontsize=12
+tick_fontsize = 16
+label_fontsize = 16
+title_fontsize=16
+legend_fontsize=20
 
-fig = plt.figure(figsize=(14,8),constrained_layout=True)
+fig = plt.figure(figsize=(14,10),constrained_layout=True)
 sfigs = fig.subfigures(1,2, width_ratios=(1.25,2))
 ax1 = sfigs[0].subplots(1,1)
 ax2 = sfigs[1].subplots(3,2,sharey=True,sharex=True)
@@ -135,7 +135,7 @@ def align_time(x,y,start_time,delta=10000):
     return x_shifted[mask]/1000, y[mask]
 
 def bmp_times(x,y,alignment):
-    zeros = np.where(np.diff(np.signwit(y)))[0]
+    zeros = np.where(np.diff(np.signbit(y)))[0]
     zero_times = np.array(x[zeros])
     i_end = np.where(np.diff(zero_times) > 4000)[0]
     bmp_end = zero_times[i_end][1]
@@ -210,11 +210,11 @@ plot_vertical_scalebar(ax2[2,1],scalebar_length=20,bar_width=0.15,yoffset=17)
 sfigs[1].supxlabel("Aligned time (s)",fontsize=label_fontsize,x=0.53)
 ############################### PLOT ####################################
 
-sfig_labels = ['A', 'B']
+# sfig_labels = ['A', 'B']
 
-for subfig, label in zip(sfigs, sfig_labels):
-    # Add label to the upper left of each subfigure
-    subfig.suptitle(label, x=0.0, y=1.04, ha='left', va='top', fontsize=22, fontweight='bold')
+# for subfig, label in zip(sfigs, sfig_labels):
+#     # Add label to the upper left of each subfigure
+#     subfig.suptitle(label, x=0.0, y=1.04, ha='left', va='top', fontsize=22, fontweight='bold')
 
 # plt.show()
 sfigs[1].align_ylabels()

@@ -4,13 +4,14 @@ import sys
 import os
 sys.path.append("../")
 import scienceplots
+import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 from neuronpyxl import network
 plt.style.use(["no-latex", "notebook"])
 
-excelpath = "../Excel_files"
-figpath = "../figs"
+snnapdatapath = "/media/udickman/uri-external-drive/SNNAP_data/fig6"
+excelpath = "./Excel_files"
+figpath = "./figs"
 fig_prefix = "Dickman_etal_Results"
 excelfile = "fig6.xlsx"
 
@@ -27,14 +28,14 @@ def remove_axes(ax,remove_x=True,remove_y=False):
         ax.spines['left'].set_visible(False)
         ax.set_yticks([])
         
-def plot_vertical_scalebar(ax,scalebar_length=20,bar_width=0.25,offset=0,xoffset=1,yoffset=10):
+def plot_vertical_scalebar(ax,scalebar_length=20,bar_width=0.25,xoffset=1,yoffset=10):
     from matplotlib.patches import Rectangle
     # Get axis limits
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
 
     # Coordinates for bottom-right corner
-    x_start = xlim[1] - offset - bar_width
+    x_start = xlim[1] - bar_width - xoffset
     y_start = ylim[0] + yoffset
 
     scalebar = Rectangle((x_start, y_start), width=bar_width, height=scalebar_length,
@@ -48,76 +49,46 @@ def plot_vertical_scalebar(ax,scalebar_length=20,bar_width=0.25,offset=0,xoffset
     
 if __name__ == "__main__":
 
-    nw1 = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="synapse",
-                                noise=None,dt=-1,integrator=2,atol=1e-5,eq_time=1000,simdur=9000,seed=False)
+    lw = 3
+    fs = 14
+    
+    nw = network.Network(params_file=os.path.join(excelpath, excelfile),\
+                          sim_name="synapse",noise=None,dt=-1,integrator=2,\
+                          atol=1e-5,eq_time=1000,simdur=9000,seed=False) 
+    nw.run(voltage_only=True)
 
-    g = 0.05
-    nw1.electrical_synapses["A"]["B"].g = g
-    nw1.electrical_synapses["B"]["A"].g = g
-    nw1.run()
-    A1 = nw1.get_cell_data("A")
-    B1 = nw1.get_cell_data("B")
+    dataA = nw.get_cell_data("A")
+    dataB = nw.get_cell_data("B")
 
-    g = 0.1
-    nw1.electrical_synapses["A"]["B"].g = g
-    nw1.electrical_synapses["B"]["A"].g = g
-    nw1.run()
-    A2 = nw1.get_cell_data("A")
-    B2 = nw1.get_cell_data("B")
+    snnap_data = pd.read_csv(os.path.join(snnapdatapath,"synapse.smu.out"),header=None,sep="\t").drop(3,axis=1)
+    snnap_data.columns = ["t","VA","VB"]
+    snnap_data = snnap_data[snnap_data["t"] >= 1]
+    snnap_data["t"] -= 1
+    snnap_data = snnap_data[snnap_data["t"] <= 9]
+    snnapcolor = "dodgerblue"
+    nrncolor = "orangered"
 
-    nw2 = network.Network(params_file=os.path.join(excelpath, excelfile), sim_name="synapse2",
-                                noise=None,dt=-1,integrator=2,atol=1e-5,eq_time=1000,simdur=9000,seed=False)
+    fig,(ax1,ax2) = plt.subplots(2,1,figsize=(14,10),height_ratios=(1,1))
 
-    g = 0.04
-    nw2.electrical_synapses["A"]["B"].g = g
-    nw2.electrical_synapses["B"]["A"].g = g
-    nw2.run()
-    A3 = nw2.get_cell_data("A")
-    B3 = nw2.get_cell_data("B")
+    ax1.plot(dataA["t"]/1000,dataA["V"],color=nrncolor,linestyle="solid",label="NEURON",linewidth=lw)
+    ax1.plot(snnap_data["t"],snnap_data["VA"],color=snnapcolor,linestyle="dashed",label="SNNAP",linewidth=lw) 
+    ax1.set_ylim((-80,40))
+    ax1.set_xlim((0,10))
+    # ax1.set_ylabel("Neuron A",rotation=0,fontsize=20)
+    remove_axes(ax1,True,True)
+    ax1.legend(frameon=False,fontsize=20)
 
-    bw = 0.008
-    fig = plt.figure(figsize=(18,10),constrained_layout=True)
-    sfigs = fig.subfigures(1,2, width_ratios=(1.3,1))
-    ax1 = sfigs[0].subplots(2,1,sharey=True)
-    ax2 = sfigs[1].subplots(1,1,sharey=True)   
 
-    t1 = A1["t"]/1000
-    # fig,ax = plt.subplots(2,1,figsize=(14,7),constrained_layout=True)
-    ax1[0].plot(t1,A1["V"],color="dodgerblue",label="Cell A")
-    ax1[0].plot(t1,B1["V"],color="red",label="Cell B",linestyle="dashed")
-    ax1[0].set_ylabel(r"$\bar{g}=0.05$ $\mu$S",rotation=0,fontsize=20)
-    ax1[0].set_yticks([-60,-30,0,30])
-    remove_axes(ax1[0],remove_x=True,remove_y=True)
-
-    t2 = A2["t"]/1000
-    ax1[1].plot(t2,A2["V"],color="dodgerblue",label="Cell A")
-    ax1[1].plot(t2,B2["V"],color="red",label="Cell B",linestyle="dashed")
-    ax1[1].set_xlabel("Time (s)",fontsize=20)
-    ax1[1].set_ylabel(r"$\bar{g}=0.1$ $\mu$S",rotation=0,fontsize=20)
-    ax1[1].set_yticks([-60,-30,0,30])
-    remove_axes(ax1[1],remove_x=False,remove_y=True)
-    plot_vertical_scalebar(ax1[1],scalebar_length=20,bar_width=0.03,xoffset=0.1,yoffset=10)
-
-    t2 = A3["t"]/1000
-    ind = np.where((t2 >= 2) & (t2 <= 3))[0]
-    # fig,ax = plt.subplots(1,1,figsize=(14,7),constrained_layout=True)
-    ax2.plot(t2[ind]-t2[ind[0]],A3["V"][ind],color="dodgerblue",label="Cell A")
-    ax2.plot(t2[ind]-t2[ind[0]],B3["V"][ind],color="red",label="Cell B",linestyle="dashed")
-    # ax.set_ylabel("g=0.04 uS",rotation=0)
-    ax2.set_yticks([-60,-30,0,30])
-    remove_axes(ax2,remove_x=False,remove_y=True)
-    ax2.set_xlim((0,1.1))
-    # ax2.legend()
-    plot_vertical_scalebar(ax2,scalebar_length=20,bar_width=0.006,xoffset=0.009,yoffset=4,offset=0)
-    ax2.set_xlabel("Time (s)",fontsize=20)
-    sfigs[0].align_ylabels()
-
-    ax2.legend(fontsize=20,loc="upper right",bbox_to_anchor=(1.1,1),frameon=False)
-
-    sfig_labels = ['A', 'B']
-
-    for subfig, label in zip(sfigs, sfig_labels):
-        # Add label to the upper left of each subfigure
-        subfig.suptitle(label, x=0.0, y=0.98, ha='left', va='top', fontsize=26, fontweight='bold')
-        
+    ax2.plot(dataB["t"]/1000,dataB["V"],color=nrncolor,linestyle="solid",linewidth=lw)
+    ax2.plot(snnap_data["t"],snnap_data["VB"],color=snnapcolor,linestyle="dashed",linewidth=lw) 
+    ax2.set_ylim((-80,40))
+    # ax2.set_ylabel("Neuron B",rotation=0,fontsize=20)
+    ax2.set_xlabel("Time (s)", fontsize=fs)
+    ax2.set_xlim((0,10))
+    ax2.set_xticks([0,0.5])
+    remove_axes(ax2,False,True)
+    plot_vertical_scalebar(ax2,scalebar_length=20,bar_width=0.025,\
+            xoffset=0.1,yoffset=10)
+                           #plot_vertical_scalebar(ax2)
+    plt.show() 
     fig.savefig(os.path.join(figpath,f"{fig_prefix}_es.jpg"),bbox_inches="tight",dpi=300)

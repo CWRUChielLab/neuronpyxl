@@ -8,8 +8,8 @@ excelpath = "./Excel_files"
 excelfile = "fig5-fig9.xlsx"
 
 # Optionally compile the mode files here
-import subprocess
-subprocess.run(f"yes | neuronpyxl -f gen_mods --file {os.path.join(excelpath,excelfile)}", shell=True, check=True)
+# import subprocess
+# subprocess.run(f"yes | neuronpyxl -f gen_mods --file {os.path.join(excelpath,excelfile)}", shell=True, check=True)
 
 from neuronpyxl import network
 
@@ -70,7 +70,7 @@ def gaussian_fit(counts,bins,data):
     
     return x_fit, *popt
 
-fig, axs = plt.subplots(2, 2, figsize=(12, 8), constrained_layout=True,width_ratios=[1.5,1])
+fig, axs = plt.subplots(2, 2, figsize=(14, 10), constrained_layout=True,width_ratios=[1.5,1])
 vcounts, vbins, _ = axs[0, 1].hist(v, bins=30, color='dodgerblue', edgecolor='white',
                                    alpha=0.8,orientation="horizontal", density=True)
 icounts, ibins, _ = axs[1, 1].hist(inoise, bins=30, color='dodgerblue', edgecolor='white',
@@ -80,17 +80,21 @@ vfit, vA, vmean, vstd = gaussian_fit(vcounts, vbins, v)
 
 # Plot voltage trace
 axs[0,0].plot(t, v, color="red", linewidth=1,alpha=0.8)
-axs[0,0].set_ylabel("Membrane potential (mV)")
+axs[0,0].set_ylabel("Voltage (mV)",fontsize=16)
 
 # Plot noisy current trace
 axs[1,0].plot(t, inoise, color="red", linewidth=1,alpha=0.8)
-axs[1,0].set_ylabel("Membrane current (nA)")
-axs[1,0].set_xlabel("Time (s)")
+axs[1,0].set_ylabel("Current (nA)",fontsize=16)
+axs[1,0].set_xlabel("Time (s)",fontsize=16)
 axs[0,0].hlines([rest_potential],0,50,linestyle="dashed",linewidth=1,colors="black")
 axs[1,0].hlines([0],0,50,linestyle="dashed",linewidth=1,colors="black")
 
 axs[0, 0].set_yticks([-62.6, -62.5, -62.4, -62.3, -62.2])
 axs[1, 0].set_yticks([-0.2, -0.1, 0.0, 0.1, 0.2])
+axs[1,0].tick_params(axis="y", labelsize=16)
+axs[0,0].tick_params(axis="y", labelsize=16)
+axs[1,0].tick_params(axis="x", labelsize=16)
+axs[1,1].tick_params(axis="x", labelsize=16)
 # Plot histograms
 
 axs[1, 1].set_xlabel("Relative frequency")
