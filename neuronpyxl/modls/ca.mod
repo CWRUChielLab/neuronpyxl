@@ -25,7 +25,7 @@ PARAMETER {
 }
 
 ASSIGNED {
-    C (mM) ica (mA/cm2) i (mA/cm2) v (mV) area (um2) nai (mM) ki (mM) cli (mM) cai (mM) dcai (mM/ms) dBR (/ms) A () B ()
+    C (mM) ica (mA/cm2) i (mA/cm2) v (mV) area (um2) nai (mM) ki (mM) cli (mM) cai (mM) dBR (/ms) A () B ()
 }
 
 STATE {
@@ -56,41 +56,39 @@ BREAKPOINT {
         dBR = 0
     }
     SOLVE states METHOD derivimplicit
-    A = A_func(v)
-    B = B_func(v)
-    i = current(numataus, numbtaus)*fbr(br(C))
+    if (Ainfonly == 1) {
+        A = Ainf(v)
+    } else {
+        A = Astate
+    }
+    if (Binfonly == 1) {
+        B = Binf(v)
+    } else {
+        B = Bstate
+    }
+    if (numataus == 0) {
+        i = (100)*(g/area)*(v-e)*fbr(br(C))
+    } else if (numbtaus == 0) {
+        i = (100)*(g/area)*pow(A,p)*(v-e)*fbr(br(C))
+    } else {
+        i = (100)*(g/area)*pow(A,p)*B*(v-e)*fbr(br(C))
+    }
     ica = i
 }
 
 DERIVATIVE states {
-    Astate' = dA(numataus)
-    Bstate' = dB(numbtaus)
+    Astate' = dA()
+    Bstate' = dB()
     BR' = dBR
 }
 
-FUNCTION current(numataus, numbtaus) (mA/cm2) { 
+FUNCTION current() (mA/cm2) { 
     if (numataus == 0) {
         current = (100)*(g/area)*(v-e)
     } else if (numbtaus == 0) {
         current = (100)*(g/area)*pow(A,p)*(v-e)
     } else {
         current = (100)*(g/area)*pow(A,p)*B*(v-e)
-    }
-}
-
-FUNCTION A_func(v) () {
-    if (Ainfonly == 1) {
-        A_func = Ainf(v)
-    } else {
-        A_func = Astate
-    }
-}
-
-FUNCTION B_func(v) () {
-    if (Binfonly == 1) {
-        B_func = Binf(v)
-    } else {
-        B_func = Bstate
     }
 }
 
@@ -124,33 +122,33 @@ FUNCTION br(c) {
     }
 }
 
-FUNCTION dA (numtaus) (/ms) {
+FUNCTION dA () (/ms) {
     if (Ainfonly == 1) {
         dA = 0
-    } else if (numtaus == 1) {
+    } else if (numataus == 1) {
         if (tmxAonly == 1) {
             dA = (Ainf(v)-A)/((1000)*tmxA)
         } else {
-            dA = (Ainf(v)-A)/tA_1tau((1000)*tminA, (1000)*tmxA)
+            dA = (Ainf(v)-A)/t_1tau((1000)*tminA,(1000)*tmxA,th1A,ts1A,tp1A)
         }
-    } else if (numtaus == 2) {
-        dA = (Ainf(v)-A)/tA_2taus((1000)*tminA, (1000)*tmxA)
+    } else if (numataus == 2) {
+        dA = (Ainf(v)-A)/t_2taus((1000)*tminA,(1000)*tmxA,th1A,ts1A,tp1A,th2A,ts2A,tp2A)
     } else {
         dA = 0
     }
 }
 
-FUNCTION dB (numtaus) (/ms) {
+FUNCTION dB () (/ms) {
     if (Binfonly == 1) {
         dB = 0
-    } else if (numtaus == 1) {
+    } else if (numbtaus == 1) {
         if (tmxBonly == 1) {
             dB = (Binf(v)-B)/((1000)*tmxB)
         } else {
-            dB = (Binf(v)-B)/tB_1tau((1000)*tminB, (1000)*tmxB)
+            dB = (Binf(v)-B)/t_1tau((1000)*tminB,(1000)*tmxB,th1B,ts1B,tp1B)
         }
-    } else if (numtaus == 2) {
-        dB = (Binf(v)-B)/tB_2taus((1000)*tminB, (1000)*tmxB)
+    } else if (numbtaus == 2) {
+        dB = (Binf(v)-B)/t_2taus((1000)*tminB,(1000)*tmxB,th1B,ts1B,tp1B,th2B,ts2B,tp2B)
     } else {
         dB = 0
     }
@@ -164,19 +162,12 @@ FUNCTION Binf(v) () {
     Binf = (1-BnB)/pow((1+exp((v-hB)/sB)), pB) + BnB
 }
 
-FUNCTION tA_1tau(tmin, tmax) (ms) {
-    tA_1tau = tmin+(tmax-tmin)/pow((1+exp((v-th1A)/ts1A)), tp1A)
-}
-FUNCTION tA_2taus(tmin, tmax) (ms) {
-    tA_2taus = tmin+(tmax-tmin)/pow((1+exp((v-th1A)/ts1A)), tp1A)/pow((1+exp((v-th2A)/ts2A)), tp2A)
+FUNCTION t_1tau(tmin,tmax,th1,ts1,tp1) (ms) {
+  t_1tau = tmin+(tmax-tmin)/pow((1+exp((v-th1)/ts1)),tp1)
 }
 
-FUNCTION tB_1tau(tmin, tmax) (ms) {
-    tB_1tau = tmin+(tmax-tmin)/pow((1+exp((v-th1B)/ts1B)), tp1B)
-}
-
-FUNCTION tB_2taus(tmin, tmax) (ms) {
-    tB_2taus = tmin+(tmax-tmin)/pow((1+exp((v-th1B)/ts1B)), tp1B)/pow((1+exp((v-th2B)/ts2B)), tp2B)
+FUNCTION t_2taus(tmin,tmax,th1,ts1,tp1,th2,ts2,tp2) (ms) {
+  t_2taus = tmin+(tmax-tmin)/pow((1+exp((v-th1)/ts1)),tp1)/pow((1+exp((v-th2)/ts2)),tp2)
 }
 
 UNITSON
