@@ -10,7 +10,7 @@ import numpy as np
 import math
 import os
 
-snnapdatapath = "/media/udickman/uri-external-drive/SNNAP_data/fig8"
+snnapdatapath = "/media/uri/uri-external-drive/SNNAP_data/fig8"
 excelpath = "./Excel_files"
 figpath = "./figs"
 fig_prefix = "Dickman_etal_Results"
@@ -50,7 +50,7 @@ def plot_vertical_scalebar(ax,scalebar_length=20,bar_width=0.25,offset=0,yoffset
 
 if __name__ == "__main__":
 
-    fs = 14
+    fs = 16
     lw = 2
 
     snnap_data = pd.read_csv(os.path.join(snnapdatapath,"synapse_vsyn2.smu.out"), sep="\t").dropna(axis=1)
@@ -77,18 +77,18 @@ if __name__ == "__main__":
     amps_snnap = []
     Vs_snnap = []
 
-    fig, axs = plt.subplots(2, 2, figsize=(14, 10))
+    fig, (ax1,ax2) = plt.subplots(1, 2, figsize=(14, 7),width_ratios=[1.4,1])
 
     # Plot in a single loop without building the ranges list
-    for i,(start, end) in enumerate(indices):
-        x = np.asarray(snnap_data["t"][start:end-15]*1000 - snnap_data["t"][start]*1000)
-        y = np.asarray(snnap_data["VB"][start:end-15] - snnap_data["VB"][start])
-        Vs_snnap.append(snnap_data["VB"][start])
-        amps_snnap.append(max(y))
-        axs[0, 0].plot(x, y, label=f'{math.floor(snnap_data["VB"][end])}',color=colors[i],linewidth=lw)
+    # for i,(start, end) in enumerate(indices):
+    #     x = np.asarray(snnap_data["t"][start:end-15]*1000 - snnap_data["t"][start]*1000)
+    #     y = np.asarray(snnap_data["VB"][start:end-15] - snnap_data["VB"][start])
+    #     Vs_snnap.append(snnap_data["VB"][start])
+    #     amps_snnap.append(max(y))
+    #     ax1.plot(x, y, label=f'{math.floor(snnap_data["VB"][end])}',color="grey",linewidth=lw,zorder=2,linestyle="dotted",alpha=0.5)
         
-    axs[0,1].plot(Vs_snnap, amps_snnap,color="black",linestyle="dashed",linewidth=lw)
-    axs[0,1].scatter(Vs_snnap, amps_snnap,color=colors,marker="o",s=80,zorder=2,edgecolors="black")
+    # ax2.plot(Vs_snnap, amps_snnap,color="grey",linestyle="dashed",linewidth=lw)
+    # ax2.scatter(Vs_snnap, amps_snnap,color="grey",marker="o",s=80,zorder=2,edgecolors="none")
     amps_nrn = []
     Vs_nrn = []
 
@@ -98,39 +98,30 @@ if __name__ == "__main__":
         y = np.asarray(B["V"][start:end] - B["V"][start])
         Vs_nrn.append(B["V"][start])
         amps_nrn.append(max(y))
-        axs[1,0].plot(x,y, label=f'{math.floor(B["V"][end])}',color=colors[i],linewidth=lw)
+        ax1.plot(x,y, label=f'{math.floor(B["V"][end])}',color=colors[i],linewidth=lw,zorder=1)
     
 
-    axs[1,1].plot(Vs_nrn, amps_nrn,color="black",linewidth=lw,linestyle="dashed")
-    axs[1,1].scatter(Vs_nrn, amps_nrn,color=colors,marker="o",s=80,zorder=2,edgecolors="black")
-    axs[1,1].set_xlabel("Holding potential (mV)",fontsize=fs)
-    axs[1,1].set_xticks([-90,-70,-50,-30,-10])
-    axs[1,0].set_xlabel("Time (ms)",fontsize=16)
-    axs[1,0].set_xticks([0,30,60,90,120,150])
-    axs[0,0].set_xticks([0,30,60,90,120,150])
+    ax2.plot(Vs_nrn, amps_nrn,color="black",linewidth=lw,linestyle="dashed",zorder=0)
+    ax2.scatter(Vs_nrn, amps_nrn,color=colors,marker="o",s=80,zorder=1,edgecolors="black")
+    ax2.set_xlabel("Holding potential (mV)",fontsize=fs)
+    ax2.set_xticks([-90,-70,-50,-30,-10])
+    ax1.set_xlabel("Time (ms)",fontsize=16)
+    ax1.set_xticks([0,30,60,90,120,150])
 
-    remove_axes(axs[0,0],remove_x=True,remove_y=False)
-    remove_axes(axs[1,0],remove_x=False,remove_y=False)
-    remove_axes(axs[0,1],remove_x=True,remove_y=True)
-    remove_axes(axs[1,1],remove_x=False,remove_y=True)
+    remove_axes(ax1,remove_x=False,remove_y=False)
+    remove_axes(ax2,remove_x=False,remove_y=True)
 
-    axs[0,0].set_ylabel("Voltage (mV)",fontsize=16)
-    axs[1,0].set_ylabel("Voltage (mV)",fontsize=16)
-    axs[1,0].set_yticks([0,0.25,0.5])
-    axs[0,0].set_yticks([0,0.25,0.5])
-    axs[0,1].set_ylim(axs[0,0].get_ylim())
-    axs[1,1].set_ylim(axs[1,0].get_ylim())
-    axs[0,0].tick_params(axis="y", labelsize=16)
-    axs[1,0].tick_params(axis="y", labelsize=16)
-    axs[1,1].tick_params(axis='x', labelsize=16)
-    axs[1,0].tick_params(axis='x', labelsize=16)
-    # fig.text(0, 0.75, "SNNAP", fontsize=18, va='center', ha='left')
-    # fig.text(0, 0.3, "NEURON", fontsize=18, va='center', ha='left')
+    ax1.set_ylabel(r"$V_i(t)-V_i(0)$ (mV)",fontsize=16)
+    ax1.set_yticks([0,0.1,0.2,0.3,0.4])
+    ax2.set_ylim(ax1.get_ylim())
+    ax1.tick_params(axis="y", labelsize=16)
+    ax1.tick_params(axis='x', labelsize=16)
+    ax2.tick_params(axis='x', labelsize=16)
 
-    axs[0,0].set_title("Post-synaptic Potential",fontsize=20)
-    axs[0,1].set_title("PSP Amplitude",fontsize=20)
+    # ax1.set_title("Post-synaptic Potential",fontsize=20)
+    # ax2.set_title("PSP Amplitude",fontsize=20)
     # axs[0, 0].legend(title='Holding potential',fontsize=12,bbox_to_anchor=(-0.5,0.5),loc="center left",title_fontsize='medium')
-    handles, labels = axs[0, 0].get_legend_handles_labels()
+    handles, labels = ax1.get_legend_handles_labels()
     fig.legend(
         handles[::-1], labels[::-1],
         title="Holding potential",
