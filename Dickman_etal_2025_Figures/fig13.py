@@ -26,15 +26,15 @@ def remove_axes2(ax, x=False):
     ax.set_yticks([])
     ax.tick_params(right=False,top=False,left=False,bottom=x)
 
-tick_fontsize = 16
-label_fontsize = 16
-title_fontsize=16
-legend_fontsize=20
+tick_fontsize = 22
+label_fontsize = 22
+title_fontsize=22
+legend_fontsize=22
 
 fig = plt.figure(figsize=(14,10),constrained_layout=True)
-sfigs = fig.subfigures(1,2, width_ratios=(1.25,2))
-ax1 = sfigs[0].subplots(1,1)
-ax2 = sfigs[1].subplots(3,2,sharey=True,sharex=True)
+sfigs = fig.subfigures(1,2, width_ratios=(2,1.25))
+ax1 = sfigs[1].subplots(1,1)
+ax2 = sfigs[0].subplots(2,2,sharey=True,sharex=True)
 
 # FIRST RUN bmp_test.py
 speed = "slow"
@@ -112,19 +112,18 @@ from matplotlib.patches import Patch
 legend_patches = [
     Patch(facecolor=colors["loaded"], edgecolor=ec,label="Loaded"),  # Solid blue
     Patch(facecolor=colors["unloaded"], edgecolor=ec, label="Unloaded"),  # Striped red,
-    Patch(facecolor="white", edgecolor=ec, hatch="//", label="CPG"),  # Solid blue
+    Patch(facecolor="white", edgecolor=ec, hatch="//", label="Simulation"),  # Solid blue
     # Patch(facecolor="white", edgecolor=ec, hatch="x", label="SNNAP"),  # Solid blue
-    Patch(facecolor="white", edgecolor=ec, label="Expmt.")  # Striped red,
+    Patch(facecolor="white", edgecolor=ec, label="Experiment")  # Striped red,
 ]
 
 ax1.legend(handles=legend_patches,loc="upper left",frameon=False)
 remove_axes1(ax1)
-sfigs[0].supxlabel("BMP phase",fontsize=label_fontsize,x=0.55)
 
 ############################### ALIGNED ####################################
 
 
-data_control = pd.read_csv(os.path.join(datapath, f"data_test_control.csv")).drop(["Unnamed: 0"], axis=1)
+#data_control = pd.read_csv(os.path.join(datapath, f"data_test_control.csv")).drop(["Unnamed: 0"], axis=1)
 data_l = pd.read_csv(os.path.join(datapath, f"data_test_loaded.csv")).drop(["Unnamed: 0"], axis=1)
 data_ul = pd.read_csv(os.path.join(datapath, f"data_test_unloaded.csv")).drop(["Unnamed: 0"], axis=1)
 
@@ -146,9 +145,9 @@ def bmp_times(x,y,alignment):
     return align_time(x,y,bmp_end)
 
 
-control = {"protraction": bmp_times(data_control["t"],data_control["V_B31a"],"end"),
-            "retraction": bmp_times(data_control["t"],data_control["V_B64a"],"start")
-           }
+#control = {"protraction": bmp_times(data_control["t"],data_control["V_B31a"],"end"),
+#            "retraction": bmp_times(data_control["t"],data_control["V_B64a"],"start")
+#           }
 
 loaded = {"protraction": bmp_times(data_l["t"],data_l["V_B31a"],"end"),
             "retraction": bmp_times(data_l["t"],data_l["V_B64a"],"start")
@@ -182,32 +181,31 @@ colors = {"retraction": "teal", "protraction": "orangered"}
 for ax in ax2.flat:
     ax.set_xlim((-10, 10))
 
-ax2[0,0].plot(*control["protraction"], c=colors["protraction"])
-ax2[0,0].set_ylabel("Control", fontsize=label_fontsize,rotation=0)
+#ax2[0,0].plot(*control["protraction"], c=colors["protraction"])
+#ax2[0,0].set_ylabel("Control", fontsize=label_fontsize,rotation=0)
 ax2[0,0].set_title("Protraction", fontsize=title_fontsize)
+ax2[0,1].set_title("Retraction", fontsize=title_fontsize)
+
+ax2[0,0].plot(*loaded["protraction"], c=colors["protraction"])
+ax2[0,0].set_ylabel("Loaded", fontsize=label_fontsize,rotation=0)
 remove_axes2(ax2[0,0])
 
-ax2[1,0].plot(*loaded["protraction"], c=colors["protraction"])
-ax2[1,0].set_ylabel("Loaded", fontsize=label_fontsize,rotation=0)
-remove_axes2(ax2[1,0])
+ax2[1,0].plot(*unloaded["protraction"], c=colors["protraction"])
+ax2[1,0].set_ylabel("Unloaded", fontsize=label_fontsize,rotation=0)
+remove_axes2(ax2[1,0],x=True)
 
-ax2[2,0].plot(*unloaded["protraction"], c=colors["protraction"])
-ax2[2,0].set_ylabel("Unloaded", fontsize=label_fontsize,rotation=0)
-remove_axes2(ax2[2,0],x=True)
+#ax2[0,1].plot(*control["retraction"], c=colors["retraction"])
+#ax2[0,1].set_title("Retraction", fontsize=title_fontsize)
+#remove_axes2(ax2[0,1])
 
-ax2[0,1].plot(*control["retraction"], c=colors["retraction"])
-ax2[0,1].set_title("Retraction", fontsize=title_fontsize)
+ax2[0,1].plot(*loaded["retraction"], c=colors["retraction"])
 remove_axes2(ax2[0,1])
 
-ax2[1,1].plot(*loaded["retraction"], c=colors["retraction"])
-remove_axes2(ax2[1,1])
+ax2[1,1].plot(*unloaded["retraction"], c=colors["retraction"])
+remove_axes2(ax2[1,1],x=True)
 
-ax2[2,1].plot(*unloaded["retraction"], c=colors["retraction"])
-remove_axes2(ax2[2,1],x=True)
+plot_vertical_scalebar(ax2[1,1],scalebar_length=20,bar_width=0.15,yoffset=17)
 
-plot_vertical_scalebar(ax2[2,1],scalebar_length=20,bar_width=0.15,yoffset=17)
-
-sfigs[1].supxlabel("Aligned time (s)",fontsize=label_fontsize,x=0.53)
 ############################### PLOT ####################################
 
 # sfig_labels = ['A', 'B']

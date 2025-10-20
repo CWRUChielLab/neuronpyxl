@@ -481,8 +481,9 @@ class Network:
         def spike_num(rate, simdur):
             return rate*simdur
         
+        h.finitialize()
+        #h.continuerun(self.noise_eq_time)
         for name, cell in self.cells.items():
-            h.finitialize()
             e0 = cell.section(0.5).v
             
             num = spike_num(rate, self.simdur+self.noise_eq_time)

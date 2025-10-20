@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 import os
 import sys
+rcParams['savefig.transparent'] = True
 plt.style.use(["no-latex", "notebook"])
 
 legend_labels = {"forestgreen": "Control",
@@ -92,7 +93,7 @@ def plot_vertical_scalebar(ax,scalebar_length=100,bar_width=0.25,xoffset=0,yoffs
     # Optional: Add text label
     ax.text(x_start - 1, y_start + scalebar_length / 2, f'{scalebar_length} mV',
             va='center', ha='right', color='black', fontsize=14)
-
+    
 
 def remove_axes(ax):
     ax.spines['top'].set_visible(False)
@@ -103,31 +104,19 @@ def remove_axes(ax):
     ax.set_xticks([])
 
 if __name__ == "__main__":
+    file_nrn1 = pd.HDFStore(os.path.join(datapath,"fig10data/BMP_data1.h5"))
+    file_nrn2 = pd.HDFStore(os.path.join(datapath,"fig10data/BMP_data2.h5"))
+    data1 = file_nrn1["membrane"]
+    data1["t"] /= 1000
+    data2 = file_nrn2["membrane"]
+    data2["t"] /= 1000
 
-    snnap_data = {
-            "clean": (pd.read_csv(os.path.join(snnapdatapath,"BMP_clean1.smu.out"), sep="\t", header=None).dropna(axis=1),
-                      pd.read_csv(os.path.join(snnapdatapath,"BMP_clean2.smu.out"), sep="\t", header=None).dropna(axis=1)),
-            "noisy": (pd.read_csv(os.path.join(snnapdatapath,"BMP_noise1.smu.out"), sep="\t", header=None).dropna(axis=1),
-                      pd.read_csv(os.path.join(snnapdatapath,"BMP_noise2.smu.out"), sep="\t", header=None).dropna(axis=1))
-            }
-    nrn_data = {
-            "clean": (pd.HDFStore(os.path.join(datapath,"fig10data/BMP_clean1.h5"))["membrane"],
-                      pd.HDFStore(os.path.join(datapath,"fig10data/BMP_clean2.h5"))["membrane"]),
-            "noisy": (pd.HDFStore(os.path.join(datapath,"fig10data/BMP_noise1.h5"))["membrane"],
-                      pd.HDFStore(os.path.join(datapath,"fig10data/BMP_noise2.h5"))["membrane"])
-            }
-    
-    snnapcols = ["t","V_B20","V_B30","V_B31a","V_B34","V_B35","V_B4",\
-                "V_B40","V_B51a","V_B52","V_B63","V_B64a","V_B8","V_CBI2"]
-
-    for f1,f2 in snnap_data.values():
-        f1.columns = snnapcols
-        f2.columns = snnapcols
-    
-    for f1,f2 in nrn_data.values():
-        f1["t"] /= 1000
-        f2["t"] /= 1000 
-    
+    snnap_data1 = pd.read_csv(os.path.join(snnapdatapath,"BMP_noise.smu.out"), sep="\t", header=None).dropna(axis=1)
+    snnap_data1.columns = ["t", "V_CBI2", "V_B31a", "V_B20", "V_B30", "V_B40", "V_B34", "V_B35",
+                        "V_B63", "V_B4", "V_B8", "V_B51a", "V_B64a", "V_B52"]
+    snnap_data2 = pd.read_csv(os.path.join(snnapdatapath,"BMP_noise2.smu.out"), sep="\t", header=None).dropna(axis=1)
+    snnap_data2.columns = ["t", "V_CBI2", "V_B31a", "V_B20", "V_B30", "V_B40", "V_B34", "V_B35",
+                        "V_B63", "V_B4", "V_B8", "V_B51a", "V_B64a", "V_B52"]
     # Create figure
     xlim = (0,75)
         
@@ -138,8 +127,8 @@ if __name__ == "__main__":
     ax3 = sfigs[1,0].subplots(2,1,sharey=True)
     ax4 = sfigs[1,1].subplots(2,1,sharey=True)
 
-    plot_bmps(snnap_data["noisy"][1],ax1,all_cells, xlim,True,True)
-    plot_bmps(nrn_data["noisy"][0],ax2,all_cells,xlim,False,False)
+    plot_bmps(snnap_data1,ax1,all_cells, xlim,True,True)
+    plot_bmps(data1,ax2,all_cells,xlim,False,False)
 
     sfigs[0,0].suptitle("SNNAP",fontsize=25)
     sfigs[0,1].suptitle("NEURON",fontsize=25)
@@ -164,54 +153,28 @@ if __name__ == "__main__":
         time_to_index(t, t[first_spike(v)] - 5),
         time_to_index(t, t[first_spike(v)] + 5)
     )
-
-    traces_snnap = {}
-    for k,(v1,v2) in snnap_data.items():
-        mask1 = irange(v1["t"],v1[f"V_{cell}"])
-        mask2 = irange(v2["t"],v2[f"V_{cell}"])
-        traces_snnap.setdefault(k,{"t":[],"V": []})
-        traces_snnap[k]["t"].append(v1["t"][mask1].to_numpy())
-        traces_snnap[k]["t"].append(v2["t"][mask2].to_numpy())
-        traces_snnap[k]["V"].append(v1[f"V_{cell}"][mask1].to_numpy())
-        traces_snnap[k]["V"].append(v2[f"V_{cell}"][mask2].to_numpy())
-
-    traces_nrn = {}
-    for k,(v1,v2) in nrn_data.items():
-        mask1 = irange(v1["t"],v1[f"V_{cell}"])
-        mask2 = irange(v2["t"],v2[f"V_{cell}"])
-        traces_nrn.setdefault(k,{"t":[],"V": []})
-        traces_nrn[k]["t"].append(v1["t"][mask1].to_numpy())
-        traces_nrn[k]["t"].append(v2["t"][mask2].to_numpy())
-        traces_nrn[k]["V"].append(v1[f"V_{cell}"][mask1].to_numpy())
-        traces_nrn[k]["V"].append(v2[f"V_{cell}"][mask2].to_numpy())
-    
+    mask_snnap1 = irange(snnap_data1["t"],snnap_data1[f"V_{cell}"])
+    mask_snnap2 =  irange(snnap_data2["t"],snnap_data2[f"V_{cell}"])
+    mask_nrn1 = irange(data1["t"],data1[f"V_{cell}"])
+    mask_nrn2 = irange(data2["t"],data2[f"V_{cell}"])
     bcolor1 = "black"
     bcolor2 = "orangered"
-
-    ax3[0].plot(traces_snnap["clean"]["t"][0]-traces_snnap["clean"]["t"][0][0],traces_snnap["clean"]["V"][0],color=bcolor1)
-    ax3[0].plot(traces_snnap["clean"]["t"][1]-traces_snnap["clean"]["t"][1][0],traces_snnap["clean"]["V"][1],color=bcolor2)
-    ax3[1].plot(traces_snnap["noisy"]["t"][0]-traces_snnap["noisy"]["t"][0][0],traces_snnap["noisy"]["V"][0],color=bcolor1)
-    ax3[1].plot(traces_snnap["noisy"]["t"][1]-traces_snnap["noisy"]["t"][1][0],traces_snnap["noisy"]["V"][1],color=bcolor2)
-
-    ax4[0].plot(traces_nrn["clean"]["t"][0]-traces_nrn["clean"]["t"][0][0],traces_nrn["clean"]["V"][0],color=bcolor1)
-    ax4[0].plot(traces_nrn["clean"]["t"][1]-traces_nrn["clean"]["t"][1][0],traces_nrn["clean"]["V"][1],color=bcolor2)
-    ax4[1].plot(traces_nrn["noisy"]["t"][0]-traces_nrn["noisy"]["t"][0][0],traces_nrn["noisy"]["V"][0],color=bcolor1)
-    ax4[1].plot(traces_nrn["noisy"]["t"][1]-traces_nrn["noisy"]["t"][1][0],traces_nrn["noisy"]["V"][1],color=bcolor2)
-
-    for ax in ax4.flatten():
-        ax.set_ylim(ax3[1].get_ylim())
-    remove_axes(ax3[0])
-    remove_axes(ax4[0])
-    
-    ax4[1].spines["top"].set_visible(False)
-    ax4[1].spines["right"].set_visible(False)
-    ax3[1].spines["top"].set_visible(False)
-    ax3[1].spines["right"].set_visible(False)
-    ax3[1].spines["bottom"].set_visible(False)
-    ax4[1].spines["bottom"].set_visible(False)
-    ax3[1].set_yticks([-50,0])
-    ax3[1].set_xticks([])
-    ax4[1].set_xticks([])
-
+    t1 = np.array(snnap_data1["t"][mask_snnap1])
+    t2 = np.array(snnap_data2["t"][mask_snnap2])
+    ax3.plot(t1-t1[0], snnap_data1[f"V_{cell}"][mask_snnap1],color=bcolor1) 
+    ax3.plot(t2-t2[0], snnap_data2[f"V_{cell}"][mask_snnap2],color=bcolor2)
+    t1 = np.array(data1["t"][mask_nrn1])
+    t2 = np.array(data2["t"][mask_nrn2])
+    ax4.plot(t1-t1[0], data1[f"V_{cell}"][mask_nrn1], color=bcolor1)
+    ax4.plot(t2-t2[0], data2[f"V_{cell}"][mask_nrn2], color=bcolor2)
+    ax4.spines['top'].set_visible(False)
+    ax4.spines['right'].set_visible(False)
+    ax4.set_yticks([-50,0])
+    ax3.spines['top'].set_visible(False)
+    ax3.spines['right'].set_visible(False)
+    ax3.set_yticks([-50,0])
+    ax4.set_ylim(ax3.get_ylim())
     plt.show() 
-    fig.savefig(os.path.join(figpath,f"{fig_prefix}_full_network.jpg"), bbox_inches='tight', dpi=300)
+    fig.savefig(os.path.join(figpath,f"{fig_prefix}_full_network.jpg"), bbox_inches='tight', dpi=300,transparent=True)
+    file_nrn1.close()
+    file_nrn2.close()
