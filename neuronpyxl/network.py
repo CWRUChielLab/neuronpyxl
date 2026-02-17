@@ -7,7 +7,7 @@ files are already compiled (see ModBuilder). It also has capabilities to run sim
 the data directly from NEURON. These functions can be accessed either through cmd_util.py or by creating
 a Network object and running the simulations from another .py file.
 
-Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
+Copyright (C) 2024 Uri Dickman, Peter J. Thomas, Hillel J. Chiel, John H. Byrne, Curtis Neveu
 
 neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ import copy
 import os
 import time
 from scipy.interpolate import CubicSpline
-from neuronpyxl import cell, reader
+from neuronpyxl import Cell, ExcelReader
 from typing import Tuple
 
 class Network:
@@ -107,7 +107,7 @@ class Network:
         self.ran_before = False
     
     
-    def add_cell(self, cell: cell.Cell):
+    def add_cell(self, cell: Cell):
         """Function to add a cell to the network.
 
         Args:
@@ -116,13 +116,23 @@ class Network:
         self.cells[cell.name] = cell
     
     
+    def print_cell_section(self, name: str, loc: float):
+        """Given a cell name, prints all of the mechanisms and parameter values in the provided cell name and location.
+
+        Args:
+            name (str): name of the cell to print
+            loc (float): location at which to print
+        """
+        h.psection(self.cells[name].section(loc))
+
+
     def setup(self, file):
         """Calls all of the functions in order to build the network from the provided Excel file.
 
         Args:
             file (pd.ExcelFile): an Excel file read in by Pandas.
         """
-        self.reader = reader.ExcelReader(file, self.sim_name, 21)
+        self.reader = ExcelReader(file, self.sim_name, 21)
         self.add_cells_from_reader()
         print("Loading simulation parameters...")
         self.feed_pools_from_reader()
@@ -207,7 +217,7 @@ class Network:
             # Need to add "neuronpyxl_" before every mechanism (see mod files)
             mechs_with_prefix = [self.prefix + m for m in vdg_parameters.keys()]
             # create a cell, which inserts mechanisms into the cell
-            c = cell.Cell(name=name, current_mechs=mechs_with_prefix, cm=cm)
+            c = Cell(name=name, current_mechs=mechs_with_prefix, cm=cm)
             for mech, d in vdg_parameters.items():
                 for param, val in d.items():
                     setattr(c.section(0.5), f"{param}_{self.prefix}{mech}", val)
@@ -436,6 +446,30 @@ class Network:
                         b = row[b_col]
                         setattr(cell.section(0.5), f"b_{self.prefix}{ch}", b)
         
+
+    def set_mech_parameter(self, name: str, param: str, val: float) -> None:
+        setattr(self.cells[name].section(0.5), param, val)
+    
+    
+    def set_cs_parameter(self, pre: str, post: str, cstype: str, param: str, val: float) -> None:
+        setattr(self.chemical_synapses[cstype][pre][post]["synapse"], param, val)
+    
+    
+    def set_es_parameter(self, pre: str, post: str, param: str, val:float) -> None:
+        setattr(self.electrical_synapses[pre][post], param, val)
+    
+
+    def get_mech_parameter(self, name: str, param: str) -> float:
+        return getattr(self.cells[name].section(0.5), param)
+    
+    
+    def get_cs_parameter(self, pre: str, post: str, cstype: str, param: str) -> float:
+        return getattr(self.chemical_synapses[cstype][pre][post]["synapse"], param)
+    
+    
+    def get_es_parameter(self, pre: str, post: str, param: str) -> float:
+        return getattr(self.electrical_synapses[pre][post], param)
+    
     
     def set_up_v0_from_reader(self):
         """Function to set all of the initial voltages of the cell membranes according to the spreadsheet.
@@ -447,16 +481,6 @@ class Network:
                 self.v0[c] = -60.0
         else:
             self.v0 = df_v0[df_v0.index != 0].to_dict()["mV"]
-
-
-    def print_cell_section(self, name: str, loc: float):
-        """Given a cell name, prints all of the mechanisms and parameter values in the provided cell name and location.
-
-        Args:
-            name (str): name of the cell to print
-            loc (float): location at which to print
-        """
-        h.psection(self.cells[name].section(loc))
 
     
     def compute_input_resistance(self):
@@ -522,6 +546,9 @@ class Network:
     
     
     def set_seed(self):
+        """
+        NOT WORKING YET
+        """
         num_seeds = 2 * len(self.cells)  # 2 seeds per NetStim, 2 NetStims per cell
         if self.seed:
             seeds = np.arange(1, num_seeds+1,dtype=int)
@@ -568,30 +595,6 @@ class Network:
             del self.recording[name]["iclamps"][index]
         del self.current_clamps[name][index]
     
-    
-    def set_mech_parameter(self, name: str, param: str, val: float) -> None:
-        setattr(self.cells[name].section(0.5), param, val)
-    
-    
-    def set_cs_parameter(self, pre: str, post: str, cstype: str, param: str, val: float) -> None:
-        setattr(self.chemical_synapses[cstype][pre][post]["synapse"], param, val)
-    
-    
-    def set_es_parameter(self, pre: str, post: str, param: str, val:float) -> None:
-        setattr(self.electrical_synapses[pre][post], param, val)
-    
-
-    def get_mech_parameter(self, name: str, param: str) -> float:
-        return getattr(self.cells[name].section(0.5), param)
-    
-    
-    def get_cs_parameter(self, pre: str, post: str, cstype: str, param: str) -> float:
-        return getattr(self.chemical_synapses[cstype][pre][post]["synapse"], param)
-    
-    
-    def get_es_parameter(self, pre: str, post: str, param: str) -> float:
-        return getattr(self.electrical_synapses[pre][post], param)
-
     
     def record_voltage_only(self):
         self.voltage_only = True
@@ -651,6 +654,18 @@ class Network:
             self.synaptic_currents_recording["t"] = h.Vector().record(h._ref_t)
     
     
+    def record_other(self,name:str,ref:str):
+        """Record a custom hoc pointer.
+
+        Args:
+            temp (float, optional): Temperature to set simulation at. Defaults to 6.3 (giant squid axon model temperature).
+            at_locs (List[float], optional): Provide the locations on the segment to record in every cell. Will error if a location is not on the segment. Defaults to [0.5].
+            all_locs (boolean, optional): If true, will record data at every location in the segment in every cell and ignores at_locs argument. Defaults to False.
+        """
+        self.recording.setdefault(name,{})[ref.replace("_ref_","")] = \
+                        h.Vector().record(getattr(self.cells[name].section(0.5),ref))
+
+
     def record(self, voltage_only: bool):
         if voltage_only:
             self.record_voltage_only()
@@ -825,6 +840,7 @@ class Network:
         sf = h.File(filename)
         ss.fwrite(sf)
 
+
     def restore_state(self,filename:str):
         """ Restores the state of the simulation. In order for this to work, the simulation
         must be set up exactly the same as when the state file was saved.
@@ -837,6 +853,7 @@ class Network:
         sf = h.File(filename)
         ss.fread(sf)
         ss.restore()
+
 
     def generate_metadata(self,voltage_only,folder):
         """Interpolate metadata and information regarding the simulation. Includes NEURON runtime, storage location, integration method, tiemstep and more.

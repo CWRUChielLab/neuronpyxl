@@ -32,14 +32,26 @@ class ExcelReader:
         Args:
             filename (str): name of the control file. Must be a *.xlsx file.
             sim_name (str): name of the simulation to retrieve the current injection information from. The sim name is from sim_name.smu
-            nrows (int): number of rows to look at (number of cells in the network)
+            nrows (int): number of rows to look at (number of cells in the network).
         """
         self.nrows = nrows # (figure this out later)
         self.usecols_neurons = f"{xlsxwriter.utility.xl_col_to_name(1)}:{xlsxwriter.utility.xl_col_to_name(nrows+1)}"
         self.sim_name = sim_name
         self.read_data(filename) # read in all of the data
+        # self.detect_num_cells(filename)
         
         
+    def detect_num_cells(self,filename) -> int:
+        nrows = 0
+
+        xls = open(pd.ExcelFile(filename,engine='openpyxl'),"rb")
+        df_temp = pd.read_excel(xls, sheet_name="Neu")
+        start_row = 2 + df_temp.index[df_temp.iloc[:, 3] == "cm"][0]
+        print("nrows = ",df_temp.iloc[[start_row]])
+
+        return nrows
+
+
     def read_data(self,filename):
         """Reads in all of the data from the Excel spreadsheet and saves it as dataframes in class variables.
         """
