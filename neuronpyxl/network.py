@@ -30,7 +30,8 @@ import copy
 import os
 import time
 from scipy.interpolate import CubicSpline
-from neuronpyxl import Cell, ExcelReader
+from .cell import Cell
+from .reader import ExcelReader
 from typing import Tuple
 
 class Network:
