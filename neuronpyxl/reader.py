@@ -45,9 +45,9 @@ class ExcelReader:
         nrows = 0
 
         xls = open(pd.ExcelFile(filename,engine='openpyxl'),"rb")
-        df_temp = pd.read_excel(xls, sheet_name="Neu")
-        start_row = 2 + df_temp.index[df_temp.iloc[:, 3] == "cm"][0]
-        print("nrows = ",df_temp.iloc[[start_row]])
+        df_tmp = pd.read_excel(xls, sheet_name="Neu")
+        start_row = 2 + df_tmp.index[df_tmp.iloc[:, 3] == "cm"][0]
+        print("nrows = ",df_tmp.iloc[[start_row]])
 
         return nrows
 
@@ -63,24 +63,24 @@ class ExcelReader:
         self.cells_data = df_cells.iloc[:, [0,2]] # Biophysical properties from each cell (name and Cm)
         
         #### ion pools
-        df_temp = pd.read_excel(xls, sheet_name="Neu")
+        df_tmp = pd.read_excel(xls, sheet_name="Neu")
         
-        start_row_pools = 2 + df_temp.index[df_temp.iloc[:, 3] == "Ion pools"][0]
+        start_row_pools = 2 + df_tmp.index[df_tmp.iloc[:, 3] == "Ion pools"][0]
         df_pools = pd.read_excel(xls, sheet_name="Neu", header=start_row_pools, index_col=0, nrows=self.nrows, usecols="D:M")
         self.ion_pools_data = self.rename_df_cols(df_pools) # All of the ion pools present in the model.
 
         #### conductance to ion
-        start_row_cond = 2 + df_temp.index[df_temp.iloc[:, 14] == "Conductance to ion"][0]
+        start_row_cond = 2 + df_tmp.index[df_tmp.iloc[:, 14] == "Conductance to ion"][0]
         df_cond = pd.read_excel(xls, sheet_name="Neu", header=start_row_cond, index_col=0, nrows=self.nrows, usecols="O:W")
         self.cond_to_ion_data = self.rename_df_cols(df_cond) # In each cell, maps which ion channels feed the ion pools.
 
         #### ion to conductance
-        start_row_ion = 2 + df_temp.index[df_temp.iloc[:, 25] == "Ion to conductance"][0]
+        start_row_ion = 2 + df_tmp.index[df_tmp.iloc[:, 25] == "Ion to conductance"][0]
         df_ion = pd.read_excel(xls, sheet_name="Neu", header=start_row_ion, index_col=0, nrows=self.nrows, usecols="Z:BB")
         self.ion_to_cond_data = self.rename_df_cols(df_ion) # In each cell, determines which ion channels are regulated by ion pools (e.g. Kcas).
 
         #### initial voltage
-        start_row_v0 = 2 + df_temp.index[df_temp.iloc[:, 55] == "Initial voltage"][0]
+        start_row_v0 = 2 + df_tmp.index[df_tmp.iloc[:, 55] == "Initial voltage"][0]
         df_v0 = pd.read_excel(xls, sheet_name="Neu", header=start_row_v0, index_col=0, nrows=self.nrows, usecols="BD:BE")
         self.initial_voltage_data = df_v0.copy() # Reads initial voltages of each cell.
         
@@ -135,15 +135,31 @@ class ExcelReader:
         df_esg = pd.read_excel(xls, 'es', header=1, index_col=0, nrows=self.nrows*2, usecols=self.usecols_neurons)
         df_esg.index = pd.Series(df_esg.index).ffill()
         self.esg_data = df_esg.copy() # Reads conductances for electrical synapses
-        
+
+
         #### current injection
-        df_temp = pd.read_excel(xls, f"{self.sim_name}.smu")
-        start_row_clamp = 2 + df_temp.index[df_temp.iloc[:, 1] == "Current injection"][0]
+        df_tmp = pd.read_excel(xls, f"{self.sim_name}.smu")
+        start_row_clamp = 2 + df_tmp.index[df_tmp.iloc[:, 1] == "Current injection"][0]
         df_clamps = pd.read_excel(xls, sheet_name=f"{self.sim_name}.smu", header=start_row_clamp, index_col=0, usecols="B:E")
         self.iclamp_data = df_clamps.copy() # Reads in IClamp data based on the sim_name.
+        
+
+        for name in (
+            "mechs_data", "cells_data", "ion_pools_data",
+            "cond_to_ion_data", "ion_to_cond_data",
+            "initial_voltage_data", "esg_data", "iclamp_data"
+        ):
+            if self.is_empty_table(getattr(self, name)):
+                setattr(self, name, pd.DataFrame())
+
         xls.close()
 
         
+    def is_empty_table(self,df):
+        data = df.to_numpy()
+        return ((pd.isna(data)) | (data == 0)).all()
+
+
     def rename_df_cols(self, df):
         """Helper method to rename duplicate column names in a systematic way.
 

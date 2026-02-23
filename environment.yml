@@ -1,4 +1,4 @@
-name: neuronpyxl-env
+name: neuronpyxl
 channels:
   - conda-forge
   - anaconda
@@ -10,6 +10,7 @@ dependencies:
   - openpyxl>=3.1.5
   - pytables>=3.10.1
   - scipy>=1.15.1
+  - matplotlib
   - pip
   - pip:
     - -e ./

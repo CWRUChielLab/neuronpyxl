@@ -11,6 +11,7 @@ reqs = [
     "openpyxl>=3.1.5",
     "tables>=3.10.1",
     "scipy>=1.15.0",
+    "matplotlib"
 ]
 
 if os_name == "Linux" or os_name == "Darwin":
