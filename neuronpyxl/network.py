@@ -309,7 +309,7 @@ class Network:
         df_esg = self.reader.esg_data
         if df_esg.empty:
             return
-        esg_stacked = df_esg[df_esg != 0].stack()
+        esg_stacked = df_esg[df_esg != 0].stack().dropna()
         for (pre, post), g in esg_stacked.items():
             presyn = self.cells[pre]
             postsyn = self.cells[post]

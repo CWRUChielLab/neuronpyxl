@@ -135,26 +135,20 @@ class ExcelReader:
         df_esg = pd.read_excel(xls, 'es', header=1, index_col=0, nrows=self.nrows*2, usecols=self.usecols_neurons)
         df_esg.index = pd.Series(df_esg.index).ffill()
         self.esg_data = df_esg.copy() # Reads conductances for electrical synapses
-
+        self.esg_data = self.clean_table(self.esg_data)
 
         #### current injection
         df_tmp = pd.read_excel(xls, f"{self.sim_name}.smu")
         start_row_clamp = 2 + df_tmp.index[df_tmp.iloc[:, 1] == "Current injection"][0]
         df_clamps = pd.read_excel(xls, sheet_name=f"{self.sim_name}.smu", header=start_row_clamp, index_col=0, usecols="B:E")
         self.iclamp_data = df_clamps.copy() # Reads in IClamp data based on the sim_name.
-        
-
-        for name in (
-            "initial_voltage_data", "esg_data", "iclamp_data"
-        ):
-            setattr(self,name,self.clean_table(getattr(self, name)))
 
         xls.close()
 
         
     def clean_table(self, df):
-        return df.loc[:, ~((df == 0.0) | df.isna()).all()].\
-                    select_dtypes(include=['object', 'string'])
+        df_tmp = df.loc[:, ~((df.isna() | (df == 0)).all())]
+        return df_tmp.loc[:, [isinstance(c, str) for c in df_tmp.columns]]
 
     def rename_df_cols(self, df):
         """Helper method to rename duplicate column names in a systematic way.
