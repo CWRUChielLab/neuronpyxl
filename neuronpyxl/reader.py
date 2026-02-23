@@ -145,20 +145,16 @@ class ExcelReader:
         
 
         for name in (
-            "mechs_data", "cells_data", "ion_pools_data",
-            "cond_to_ion_data", "ion_to_cond_data",
             "initial_voltage_data", "esg_data", "iclamp_data"
         ):
-            if self.is_empty_table(getattr(self, name)):
-                setattr(self, name, pd.DataFrame())
+            setattr(self,name,self.clean_table(getattr(self, name)))
 
         xls.close()
 
         
-    def is_empty_table(self,df):
-        data = df.to_numpy()
-        return ((pd.isna(data)) | (data == 0)).all()
-
+    def clean_table(self, df):
+        return df.loc[:, ~((df == 0.0) | df.isna()).all()].\
+                    select_dtypes(include=['object', 'string'])
 
     def rename_df_cols(self, df):
         """Helper method to rename duplicate column names in a systematic way.
