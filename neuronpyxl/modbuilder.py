@@ -7,7 +7,7 @@ correct ion in that channel if notated properly (name of the ion channel has to 
 not case-sensitive). These files detail the equations that can be used within the simulation, the parameters
 of which are set in the NetworkBuilder class. Will use a nonspecific ion if it doesn not begin with one of those ions.
 
-Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
+Copyright (C) 2026 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
 neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

@@ -4,7 +4,7 @@ This file is part of neuronpyxl.
 The ControlReader is a helper class to read in the parameters from the Excel spreadsheet models.
 FYI: This code was taylored to the exact format of the Excel spreadsheets, so adding new features requires significant refactoring of code.
 
-Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
+Copyright (C) 2026 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
 neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

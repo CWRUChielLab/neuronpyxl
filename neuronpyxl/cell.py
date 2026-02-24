@@ -1,24 +1,24 @@
 """
-This file is part of pySNNAP.
+This file is part of neuronpyxl.
 
 The Cell class treats each cell in NEURON as a custom object. Each Cell comes with a NEURON Section
 object, as well as other useful properties, such as I-V recordings and current clamps. This structure
 enables the Network class to seem more like a network, rather than leaving the cells as sections only.
 
-Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
+Copyright (C) 2026 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
-pySNNAP is free software: you can redistribute it and/or modify
+neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 any later version.
 
-pySNNAP is distributed in the hope that it will be useful,
+neuronpyxl is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with pySNNAP. If not, see <https://www.gnu.org/licenses/>.
+along with neuronpyxl. If not, see <https://www.gnu.org/licenses/>.
 """
 
 from neuron import h
@@ -147,7 +147,7 @@ class Cell:
 
         Args:
             loc (float): location in cell
-            attr (str): attribute (e.g. g_pysnnap_na) (see mod files)
+            attr (str): attribute (e.g. g_neuronpyxl_na) (see mod files)
             val (float): value to set it to
         """
         setattr(self.section(loc), attr, val)

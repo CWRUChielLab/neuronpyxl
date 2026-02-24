@@ -1,10 +1,13 @@
 """
 This file is part of neuronpyxl.
 
-This is a command-line utility for generating mod files and running single simulations based on models described by an Excel spreadsheet (see examples).
-This file must be used to generate the mod files. For running simulations in a .py file or notebook, see the examples.
+This is a command-line utility for generating mod files and 
+running single simulations based on models described by an
+Excel spreadsheet (see examples). This file must be used to
+generate the mod files. For running simulations in a .py file
+or notebook, see the examples.
 
-Copyright (C) 2024 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
+Copyright (C) 2026 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
 
 neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -30,14 +33,17 @@ import numpy as np
 import pandas as pd
 import shutil
 import sys
+from pathlib import Path
+
+cwd = os.getcwd()
 
 def add_arguments():
+    """Adds arguments to the command line argument parser.
 
-    global cwd
-    cwd = os.getcwd() # Get current working directory in which to create files.
+    Returns:
+        
+    """
 
-    ###################################################################
-    # Set up command line arguments
     parser = argparse.ArgumentParser(description="Process NEURON simulation arguments.")
     parser.add_argument('-f', required=True, type=str, choices=['gen_mods', 'run_sim'],
                         help="Function to run. The options are 'gen_mods' or 'run_sim'.")
@@ -45,7 +51,7 @@ def add_arguments():
                         help="File name of the control excel sheet describing the simulation.")
     parser.add_argument('--name', type=str,
                         help="Name of the simulation.")
-    parser.add_argument('--folder', type=str,
+    parser.add_argument('--folder', type=Path,
                         help="Folder name to save data to.")
     parser.add_argument('--duration', type=float, default=10000.0,
                         help="Duration of the simulations in ms. Default is 30000.")
@@ -76,8 +82,11 @@ def add_arguments():
                         help="Sets equilibration time to provided value. Defaults to 1000.0 ms.")
     args = parser.parse_args()
 
-    ###################################################################
-    # Ensure that required arguments for each function are provided.
+    ##################################
+    # Ensure that required arguments #
+    # for each function are provided #
+    ##################################
+
     required_args = {
         "gen_mods": ["f", "file"],
         "run_sim": ["f", "file", "name", "duration"]
@@ -88,20 +97,31 @@ def add_arguments():
 
     return args
 
-###################################################################
-# Define functions
+####################
+# Define functions #
+####################
 
-# Function to build mod files
 def gen_mods(file):
+    """Function to generate mod files by calling
+    run from the ModBuilder class.
+
+    Args:
+        file (Path): path to an Excel file
+    """
     mb = ModBuilder(file)
     mb.run()
+    # Run NEURON's nrnivmodl executable
     subprocess.run("nrnivmodl mod", shell=True, check=True)
 
 
-# Function to clear data directory before populating it
 def clear_dir(dir_path):
+    """Function to clear a data directory before populating it.
+
+    Args:
+        dir_path (Path): path of a directory to clear
+    """
     if os.path.exists(dir_path):
-        # Directory exists, empty it
+        # If directory exists, empty it
         del_dir = input(f"Clear out contents of {dir_path}? (y/n) ") == "y"
         if not del_dir:
             sys.exit()
@@ -111,9 +131,22 @@ def clear_dir(dir_path):
         # Directory does not exist, create it
         os.makedirs(dir_path)
 
-def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:float=10000.,
-            method:int=2, atol:float=1e-5, interp:float=-1, syn:bool=False, vonly:bool=False,
-            noise:tuple=None, teq:float=1000.0, seed:bool=False):
+
+def run_sim(
+            name        : str,
+            file        : str, 
+            folder      : Path   =None, 
+            step        : float =-1.,
+            duration    : float =10000.,
+            method      : int   =2,
+            atol        : float =1e-5,
+            interp      : float =-1,
+            syn         : bool  =False,
+            vonly       : bool  =False,
+            noise       : tuple =None,
+            teq         : float =1000.,
+            seed        : bool  =False
+    ):
     """Runs a simulation from the provided file and simulation name (before .smu in Excel),
         provided that the mod files are properly compiled.
 
@@ -134,26 +167,41 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
         noise (tuple, optional): Noise parameters for an Exponential Synapse noise model. noise[0] = rate (Hz),
                                 noise[1] = weight (nS), noise[2] = tau (ms). Defaults to None.
         teq (float, optional): Sets equilibration time to provided value. Defaults to 1000.0.
+        seed (int, optional): Sets the seed for noisy synapses if included. (Not working)
     """
+
     # Ensure valid input parameters
-    assert interp == -1 or interp > 0, f"interp={interp} is not a valid interpolation timestep. Must be greater than 0."
-    assert duration > 0, f"duration={duration} is not a valid simulation duration. Must be greater than 0."
-    assert step == -1 or step > 0, f"step={step} is not a valid simulation timestep Must be greater than 0."
-    assert 0 < atol < 1, f"atol={atol} is not a valid error tolerance. Must be between 0 and 1."
+    assert interp == -1 or interp > 0, \
+        f"interp={interp} is not a valid interpolation timestep. Must be greater than 0."
+    assert duration > 0, \
+        f"duration={duration} is not a valid simulation duration. Must be greater than 0."
+    assert step == -1 or step > 0, \
+        f"step={step} is not a valid simulation timestep Must be greater than 0."
+    assert 0 < atol < 1, \
+        f"atol={atol} is not a valid error tolerance. Must be between 0 and 1."
 
     # Set up and run simulation but setting object parameters to correct values
-    nb = Network(params_file=file, sim_name=name, noise=noise, dt=step, atol=atol,
-                                integrator=method, eq_time=teq, simdur=duration, seed=seed)
+    nb = Network(
+                params_file     =   file,
+                sim_name        =   name,
+                noise           =   noise,
+                dt              =   step,
+                atol            =   atol,
+                integrator      =   method,
+                eq_time         =   teq,
+                simdur          =   duration,
+                seed            =   seed
+        )
     if syn and not vonly:
         nb.record_synaptic_currents = True
         
     # Set up data directory after parameters have been loaded
-    if not os.path.exists(os.path.join(cwd, "Data")):
-        os.makedirs(os.path.join(cwd, "Data"))
+    if not os.path.exists(os.path.join(cwd, "data")):
+        os.makedirs(os.path.join(cwd, "data"))
     if folder is not None:
-        results_folder = os.path.join(cwd, f"Data/{folder}")
+        results_folder = os.path.join(cwd, f"data/{folder}")
     else:
-        results_folder = os.path.join(cwd, f"Data/{name}_data")
+        results_folder = os.path.join(cwd, f"data/{name}_data")
     clear_dir(results_folder) # Clear the directory so it is clean for the fresh data
     nb.run(voltage_only=vonly) # Run the simulation, passing in vonly.
     
@@ -161,7 +209,10 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
     print(f"Saving data...")
  
     data_file_name = f"{name}_data.h5"
-    file = pd.HDFStore(os.path.join(results_folder, data_file_name),mode="w")
+    file = pd.HDFStore(
+                os.path.join(results_folder, data_file_name),
+                mode="w"
+            )
     if vonly: # if only voltage and time are recorded
         data = {}
         for c in nb.cells.keys():
@@ -173,7 +224,10 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
             if "t" not in data:
                 data["t"] = cell_data["t"]
             data[f"V_{c}"] = cell_data["V"]
-        pd.DataFrame(data).to_hdf(os.path.join(results_folder, data_file_name), key="membrane", mode="a")
+        pd.DataFrame(data).to_hdf(
+                    os.path.join(results_folder, data_file_name),
+                    key="membrane", mode="a"
+        )
     else: # If all currents and concentrations are recorded, then save each cell's data in its own .h5 file.
         if syn:
             if interp <= 0:
@@ -182,19 +236,28 @@ def run_sim(name: str, file: str, folder:str=None, step:float=-1., duration:floa
                 tvec = np.arange(start=0,stop=duration,step=interp)
                 chemsyn_data, elecsyn_data = nb.get_interpolated_syn_data(tvec)
             if chemsyn_data is not None: # could be none if there are one of cs or es present
-                pd.DataFrame(chemsyn_data).to_hdf(os.path.join(results_folder, data_file_name), key="cs", mode="a")
+                pd.DataFrame(chemsyn_data).to_hdf(
+                            os.path.join(results_folder, data_file_name),
+                            key="cs", mode="a"
+                )
             if elecsyn_data is not None:
-                pd.DataFrame(elecsyn_data).to_hdf(os.path.join(results_folder, data_file_name), key="es", mode="a")
+                pd.DataFrame(elecsyn_data).to_hdf(
+                            os.path.join(results_folder, data_file_name),
+                            key="es", mode="a"
+                )
         for c in nb.cells.keys():
             if interp <= 0:
                 cell_data = nb.get_cell_data(c)
             else:
                 tvec = np.arange(start=0,stop=duration,step=interp)
                 cell_data = nb.get_interpolated_cell_data(c, tvec)
-            pd.DataFrame(cell_data).to_hdf(os.path.join(results_folder, data_file_name), key=f"{c}", mode="a")
+            pd.DataFrame(cell_data).to_hdf(
+                        os.path.join(results_folder, data_file_name),
+                        key=f"{c}", mode="a"
+            )
     file.close()
     # Save metadata
-    nb.generate_metadata(voltage_only=vonly,folder=results_folder) # Generate a metadata file stored in info.txt
+    nb.generate_metadata(voltage_only=vonly,folder=results_folder)
     print(f"Simulation complete! Data has been saved to {os.path.join(results_folder,data_file_name)}.\
           \nSimulation info can be found in {os.path.join(results_folder,'info.txt')}")
 
@@ -205,22 +268,25 @@ def main():
     if func == "gen_mods":
         gen_mods(args.file)
     elif func == "run_sim":
-        run_sim(name=args.name,
-                file=args.file,
-                folder=args.folder,
-                duration=args.duration,
-                step=args.step,
-                method=args.method,
-                atol=args.atol,
-                interp=args.interp,
-                syn=args.syn,
-                vonly=args.vonly,
-                noise=args.noise,
-                teq=args.teq,
-                seed=args.seed
-                )
+        run_sim(
+                name        =   args.name,
+                file        =   args.file,
+                folder      =   args.folder,
+                duration    =   args.duration,
+                step        =   args.step,
+                method      =   args.method,
+                atol        =   args.atol,
+                interp      =   args.interp,
+                syn         =   args.syn,
+                vonly       =   args.vonly,
+                noise       =   args.noise,
+                teq         =   args.teq,
+                seed        =   args.seed
+        )
 
-###################################################################
-# Execute when this file is run
+#################################
+# Execute when this file is run #
+#################################
+
 if __name__ == "__main__":
     main()

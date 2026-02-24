@@ -7,7 +7,7 @@ files are already compiled (see ModBuilder). It also has capabilities to run sim
 the data directly from NEURON. These functions can be accessed either through cmd_util.py or by creating
 a Network object and running the simulations from another .py file.
 
-Copyright (C) 2024 Uri Dickman, Peter J. Thomas, Hillel J. Chiel, John H. Byrne, Curtis Neveu
+Copyright (C) 2026 Uri Dickman, Peter J. Thomas, Hillel J. Chiel, John H. Byrne, Curtis Neveu
 
 neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -307,19 +307,18 @@ class Network:
         """
         #### Electrical synapses
         df_esg = self.reader.esg_data
-        if df_esg.empty:
-            return
-        esg_stacked = df_esg[df_esg != 0].stack().dropna()
-        for (pre, post), g in esg_stacked.items():
-            presyn = self.cells[pre]
-            postsyn = self.cells[post]
-            syn = h.neuronpyxl_ES(postsyn.section(0.5))
-            # Set max conductance
-            syn.g = g
-            # Set up presynaptic potential pointer (works the same as gap junction NEURON mechanism file)
-            syn._ref_vpre = presyn.section(0.5)._ref_v
-            # Update ES dictionary
-            self.electrical_synapses.setdefault(pre, {})[post] = syn
+        if not df_esg.empty:
+            esg_stacked = df_esg[df_esg != 0].stack().dropna()
+            for (pre, post), g in esg_stacked.items():
+                presyn = self.cells[pre]
+                postsyn = self.cells[post]
+                syn = h.neuronpyxl_ES(postsyn.section(0.5))
+                # Set max conductance
+                syn.g = g
+                # Set up presynaptic potential pointer (works the same as gap junction NEURON mechanism file)
+                syn._ref_vpre = presyn.section(0.5)._ref_v
+                # Update ES dictionary
+                self.electrical_synapses.setdefault(pre, {})[post] = syn
             
         # helper method to set values of all params in below dictionaries
         def set_attr_cs_params(d, syn):
