@@ -103,7 +103,7 @@ class Cell:
             loc (float, optional): Location in the cell. Defaults to 0.5.
 
         Returns:
-            h.IClamp: the IClamp
+            h.IClamp: the IClamp hoc object
         """
         ic = h.IClamp(self.section(loc))
         if delay is not None:
@@ -115,16 +115,17 @@ class Cell:
         return ic
     
     
-    def get_attribute(self, loc: float, mech: str, attr: str) -> any:
+    def get_attribute(self, loc: float, mech: str, attr: str) -> float:
         """Gets an attribute from this Cell.
 
         Args:
             loc (float): location in cell
             mech (str): mechanism to access (e.g. Ka, Napp, HCN)
-            attr (str): attribute of interest (e.g. g, e, th1, tmaxA) (see RANGE variables in mod files for all attributes)
+            attr (str): attribute of interest (e.g. g, e, th1, tmaxA) \
+                        (see RANGE variables in mod files for all attributes)
 
         Returns:
-            any: the value of the attribute
+            float: the value of the attribute
         """
         return getattr(self.section(loc), f"{attr}_{mech}")
     
@@ -137,7 +138,7 @@ class Cell:
             attr (str): attribute of to get
 
         Returns:
-            any: Hoc object or pointer
+            any: hoc pointer to the hoc object
         """
         return getattr(self.section(loc), f"_ref_{attr}")
     
