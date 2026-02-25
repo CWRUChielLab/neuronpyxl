@@ -1,13 +1,16 @@
 """
 This file is part of neuronpyxl.
 
-The Network class is the central class for neuronpyxl. It takes the simplified results from the
-ControlReader and generates the entire network from that information, assuming that the correctly-named mod 
-files are already compiled (see ModBuilder). It also has capabilities to run simulations and record
-the data directly from NEURON. These functions can be accessed either through cmd_util.py or by creating
-a Network object and running the simulations from another .py file.
+The Network class is the central class for neuronpyxl. It takes the
+simplified results from the ExcelReader and generates the entire network
+from that information, assuming that the correctly-named mod files are
+already compiled (see ModBuilder). It also has capabilities to run simulations
+and record the data directly from NEURON. These functions can be accessed
+either through cmd_util.py or by creating a Network object and running the
+simulations from another .py file.
 
-Copyright (C) 2026 Uri Dickman, Peter J. Thomas, Hillel J. Chiel, John H. Byrne, Curtis Neveu
+Copyright (C) 2026 Uri Dickman, Peter J. Thomas, Hillel J. Chiel, John H. Byrne,
+and Curtis L. Neveu.
 
 neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -35,77 +38,116 @@ from .reader import ExcelReader
 from typing import Tuple
 
 class Network:
-    def __init__(self, params_file: str, sim_name: str, noise: tuple, dt: float, integrator: int, atol: float, eq_time: float, simdur:float, seed:bool):
+    def __init__(
+            self,
+            params_file : str,
+            sim_name    : str,
+            noise       : tuple,
+            dt          : float,
+            integrator  : int,
+            atol        : float,
+            eq_time     : float,
+            simdur      : float,
+            seed        : bool=1234
+        ):
         """_summary_
 
         Args:
-            params_file (str, optional): _description_. Defaults to "".
-            cells (list, optional): _description_. Defaults to [].
-
-        Raises:
-            ValueError: _description_
+            params_file (str): _description_
+            sim_name (str): _description_
+            noise (tuple): _description_
+            dt (float): _description_
+            integrator (int): _description_
+            atol (float): _description_
+            eq_time (float): _description_
+            simdur (float): _description_
+            seed (bool): _description_
         """
+
         self.cwd = os.getcwd()
-        h.load_file("stdrun.hoc")
-
-        # I don't think this is needed
-        # if platform.uname()[0] == "Windows":
-        #     h.nrn_load_dll(os.path.join(self.cwd, "nrnmech.dll"))
-        self.cells = {} # Dict[cell name -> Cell object] (see cell.py)
+        h.load_file("stdrun.hoc")       # Necessary for NEURON run procedures
         
-        ############# To prevent garbage collection, store all necessary objects #############
+        ############# Initialize Network Data Structures #############
 
+        self.cells = {}                 # Dict[cell name -> Cell object] (see cell.py)
+
+        # Electrical synapse dictionary
         # Dict[presynaptic cell name -> Dict[postsynaptic cell name -> PointProcess]]
-        self.electrical_synapses = {} 
-        # Dict[synapse type -> Dict[presynaptic cell name -> Dict[postsynaptic cell name ->
-        #Dict["synapse" -> PointProcess, "netcon" -> NetCon]]]]
-        self.chemical_synapses = {"fast": {}, "slow": {}}
-        self.input_resistance = {} # stores input resistances
+        self.electrical_synapses = {}
 
+        # Dict[synapse type -> Dict[presynaptic cell name ->
+        #                      Dict[postsynaptic cell name ->
+        #                      Dict["synapse" -> PointProcess, "netcon" -> NetCon]]]]
+        self.chemical_synapses = {"fast": {}, "slow": {}}
+
+        # This is not used, but a function exists to compute if necessary
+        self.input_resistance = {} # Dict[name -> resistance]
+
+        # Define noise parameters
+        # Rate (Hz): firing frequency, defines Poisson interval
+        # Scale (uS): synaptic weight
+        # Tau (ms): time constant
         if noise is not None:
             self.noise = {"rate": noise[0], "scale": noise[1], "tau": noise[2]}
         else:
             self.noise = None
+        # Noise connections for 
+        # Tuple of 2 dicts structured as:
+        #       Dict["netstim" -> PointProcess
+        #            "syn" -> PointProcess
+        #            "netcon" -> PointProcess]
+        # First syn is excitatory, second is inhibitory
         self.noise_cons = {}
         self.seed = seed
 
-        # There can be multiple clamps at the same location. This may be deprecated at some pointers
-        # because this model uses 0.5 as the default and only location.
-        self.current_clamps = {} # Dict[cell name -> List[h.IClamp]]
-        self.pools_active = {}
-        
-        self.zero_ref = h.Vector(1) # Create a 0 reference in case there are unused hoc pointers
+        # There can be multiple iclamps at the same location.
+        self.current_clamps = {}        # Dict[cell name -> List[h.IClamp]]
+        self.v0 = {}                    # Initial voltages
+
+        # List of ion pools active in each cell
+        self.pools_active = {}          # Dict[cell name -> List[str]]
+    
+        # Create a 0 reference in case there are unused hoc pointers
+        # We use the 0 reference so they can still be added without changing the value.
+        # This is used in the ion pool mechanism.
+        self.zero_ref = h.Vector(1)
         self.zero_ref.x[0] = 0  # Set the first element to zero
         
-        self.prefix = "neuronpyxl_" # See mod file suffixes
+        # Prefix for each of the NEURONpyxl NMODL mechanisms:
+        self.mech_prefix = "neuronpyxl_"
+
 
         ############ Simulation setup parameters #############
-        self.dt = dt
-        self.integrator = integrator # can be 1 or 2 (1: Backwards Euler, 2: Crank-Nicholson)
+        self.dt = dt                    # Timestep
+        self.integrator = integrator    # 1: Backwards Euler, 2: Crank-Nicholson
         match self.integrator:
             case 1:
                 self.secondorder = 0
             case 2:
                 self.secondorder = 2
         self.atol = atol
-        self.interp = 0.005
-        self.v0 = {}
-        self.eq_time = eq_time
+        self.interp = 0.005             # Interpolation timestep default
+        
+        self.eq_time = eq_time          # Relaxation time before recording
         if noise is not None:
             self.noise_eq_time = 1000
         else:
             self.noise_eq_time = 0
-        self.simdur = simdur
-        self.temp = 6.3
+        self.simdur = simdur            # Total duration to record after relaxation 
+        self.temp = 6.3                 # None of the mechanisms use this
         self.record_synaptic_currents = False
+
         self.sim_name = sim_name
         self.params_file = params_file
-        # Load in all parameters to NEURON
-        self.setup(params_file)
+
         # Set up recording dictionary -- populated during run step
-        self.recording = {} # Dict["t" -> time recording, [cell name -> all recordings for cell] for cell in cells]
+        # Dict["t" -> time recording, cell name -> Cell recordings for cell in cells]
+        self.recording = {} 
         self.synaptic_currents_recording = {}
         self.ran_before = False
+
+        ############ Build the network #############
+        self.setup(params_file)         # Load in all parameters to NEURON
     
     
     def add_cell(self, cell: Cell):
@@ -118,7 +160,8 @@ class Network:
     
     
     def print_cell_section(self, name: str, loc: float):
-        """Given a cell name, prints all of the mechanisms and parameter values in the provided cell name and location.
+        """Given a cell name, prints all of the mechanisms and parameter \
+        values in the provided cell name and location.
 
         Args:
             name (str): name of the cell to print
@@ -127,8 +170,90 @@ class Network:
         h.psection(self.cells[name].section(loc))
 
 
+    ############ Define getters and setters for parameter values #############
+    ############ within the network to interface with NMODL      #############
+
+    def get_mech_parameter(self, name: str, param: str) -> float:
+        """Set the value of a parameter from an ion channel/pool mechanism
+
+        Args:
+            name (str): cell name
+            param (str): parameter name (see spreadsheet)
+
+        Returns:
+            float: value of the parameter
+        """
+        return getattr(self.cells[name].section(0.5), param)
+    
+    
+    def get_cs_parameter(self, pre: str, post: str, cstype: str, param: str) -> float:
+        """Set the value of a parameter of a chemical synapse
+
+        Args:
+            pre (str): presynaptic cell name
+            post (str): postsynaptic cell name
+            cstype (str): chemical synapse type (either fast or slow)
+            param (str): parameter name (see spreadsheet csg,cse,csfat)
+
+        Returns:
+            float: value of the parameter
+        """
+        return getattr(self.chemical_synapses[cstype][pre][post]["synapse"], param)
+    
+    
+    def get_es_parameter(self, pre: str, post: str, param: str) -> float:
+        """Set the value of a parameter of an electrical synapse
+
+        Args:
+            pre (str): presynaptic cell name
+            post (str): postsynaptic cell name
+            param (str): paramter name (see spreadsheet es)
+
+        Returns:
+            float: value of the parameter
+        """
+        return getattr(self.electrical_synapses[pre][post], param)
+    
+
+    def set_mech_parameter(self, name: str, param: str, val: float) -> None:
+        """Set the value of a parameter from an ion channel/pool mechanism
+
+        Args:
+            name (str): cell name
+            param (str): parameter name (see spreadsheet)
+            val (float): new parameter value
+        """
+        setattr(self.cells[name].section(0.5), param, val)
+    
+    
+    def set_cs_parameter(self, pre: str, post: str, cstype: str, param: str, val: float) -> None:
+        """Set the value of a parameter of a chemical synapse
+
+        Args:
+            pre (str): presynaptic cell name
+            post (str): postsynaptic cell name
+            cstype (str): chemical synapse type (either fast or slow)
+            param (str): parameter name (see spreadsheet csg,cse,csfat)
+            val (float): new parameter value
+        """
+        setattr(self.chemical_synapses[cstype][pre][post]["synapse"], param, val)
+    
+    
+    def set_es_parameter(self, pre: str, post: str, param: str, val:float) -> None:
+        """Set the value of a parameter of an electrical synapse
+
+        Args:
+            pre (str): presynaptic cell name
+            post (str): postsynaptic cell name
+            param (str): paramter name (see spreadsheet es)
+            val (float): new parameter value
+        """
+        setattr(self.electrical_synapses[pre][post], param, val)
+
+
     def setup(self, file):
-        """Calls all of the functions in order to build the network from the provided Excel file.
+        """Calls all of the initialization functions in order to build the network from
+        the provided Excel file.
 
         Args:
             file (pd.ExcelFile): an Excel file read in by Pandas.
@@ -146,33 +271,11 @@ class Network:
 
     
     def add_cells_from_reader(self):
-        """Adds all of the cells present in the model into the network, along with their corresponding mechanisms.
-        Sets all of the parameter values of each mechanism in each cell according to those present in the spreadsheet.
+        """Adds all of the cells present in the model into the network,\
+        along with their corresponding mechanisms. Sets all of the parameter\
+        values of each mechanism in each cell according to those present in the\
+        spreadsheet.
         """
-        def set_activation_parameters(vdg_parameters, key, r, var):
-            """A and B are identical sets of equations, so this function sets all parameter values
-            accounting for every possible variable combination that exists within the SNNAP model.
-
-            Args:
-                vdg_parameters (_type_): main parameter dictionary (see below)
-                r (_type_): row of the df
-                key (_type_): ion channel mechanism
-                var (_type_): A or B
-            """
-            if pd.isna(r[var]["tmx"]):
-                vdg_parameters[key][f"{var}infonly"] = 1
-            for param, val in r[var].items():
-                if not pd.isna(val):
-                    vdg_parameters[key][f"{param}{var}"] = val
-                    if not f"{var}infonly" in vdg_parameters[key]:
-                        if param == "tmx" and (r[var]["ts1"] == 0 or pd.isna(r[var]["ts1"])):
-                            vdg_parameters[key][f"tmx{var}only"] = 1
-                            vdg_parameters[key][f"num{var.lower()}taus"] = 1
-            if not pd.isna(r[var]["ts1"]) and r[var]["ts1"] != 0:
-                if pd.isna(r[var]["ts2"]) or r[var]["ts2"] == 0:
-                    vdg_parameters[key][f"num{var.lower()}taus"] = 1
-                else:
-                    vdg_parameters[key][f"num{var.lower()}taus"] = 2
                     
         # Read all mechanisms present
         # Reads cells data, which includes cell names and membrane capacitance
@@ -216,19 +319,19 @@ class Network:
                         vdg_parameters[key][f"numbtaus"] = 0
             # Create the Cell object
             # Need to add "neuronpyxl_" before every mechanism (see mod files)
-            mechs_with_prefix = [self.prefix + m for m in vdg_parameters.keys()]
+            mechs_with_prefix = [self.mech_prefix + m for m in vdg_parameters.keys()]
             # create a cell, which inserts mechanisms into the cell
             c = Cell(name=name, current_mechs=mechs_with_prefix, cm=cm)
             for mech, d in vdg_parameters.items():
                 for param, val in d.items():
-                    setattr(c.section(0.5), f"{param}_{self.prefix}{mech}", val)
+                    setattr(c.section(0.5), f"{param}_{self.mech_prefix}{mech}", val)
             # Add the cell to the network
             self.add_cell(c)
             print(f"Added {c} to the network.")
               
     
     def feed_pools_from_reader(self):
-        """Sets up the ion pool feeding mechanism from python according to the implementation in NMODL.
+        """Sets up the ion pool feeding mechanism from Python according to the implementation in NMODL.
         If a channel feeds into a pool, then it has a STATE variable for that concentration contribution (e.g. cai_state).
         Then, the ion pool accumulator mechanism is added into the cell and reads in all the state variables which feed into the pool as pointers.
         The sum of those concentrations becomes the total concentration of the ion pool, which is set by the accumulator and not the channel mechanism.
@@ -275,19 +378,19 @@ class Network:
                         ions.setdefault(ion, []).append(ch)
             # Load the ion pool mechanisms into the cell
             
-            cell.load_mechanisms([f"{self.prefix}{ion}pool" for ion in self.pools_active[name]])
+            cell.load_mechanisms([f"{self.mech_prefix}{ion}pool" for ion in self.pools_active[name]])
             for ion, l in ions.items():
                 for j, ch in enumerate(l):
                     # Set up the accumulator pointers correctly
-                    chmech = getattr(cell.section(0.5), f"{self.prefix}{ion}pool")
+                    chmech = getattr(cell.section(0.5), f"{self.mech_prefix}{ion}pool")
                     pointer = f"i{j+1}"
-                    ref = getattr(cell.section(0.5), f"_ref_i_{self.prefix}{ch}")
+                    ref = getattr(cell.section(0.5), f"_ref_i_{self.mech_prefix}{ch}")
                     h.setpointer(ref, pointer, chmech)
                 if j < max_channels[ion]-1:
                     for k in range(j+1, max_channels[ion]-j):
-                        h.setpointer(self.zero_ref._ref_x[0], f"i{k+1}", getattr(cell.section(0.5), f"{self.prefix}{ion}pool"))
-            setattr(cell.section(0.5), f"k1_{self.prefix}{ion}pool", pools[ion]["k1"])
-            setattr(cell.section(0.5), f"k2_{self.prefix}{ion}pool", pools[ion]["k2"])
+                        h.setpointer(self.zero_ref._ref_x[0], f"i{k+1}", getattr(cell.section(0.5), f"{self.mech_prefix}{ion}pool"))
+            setattr(cell.section(0.5), f"k1_{self.mech_prefix}{ion}pool", pools[ion]["k1"])
+            setattr(cell.section(0.5), f"k2_{self.mech_prefix}{ion}pool", pools[ion]["k2"])
                       
 
     def add_iclamps_from_reader(self):
@@ -319,86 +422,24 @@ class Network:
                 syn._ref_vpre = presyn.section(0.5)._ref_v
                 # Update ES dictionary
                 self.electrical_synapses.setdefault(pre, {})[post] = syn
-            
-        # helper method to set values of all params in below dictionaries
-        def set_attr_cs_params(d, syn):
-            for k, v in d.items():
-                if isinstance(v, dict):
-                    set_attr_cs_params(v, syn)
-                else:
-                    setattr(syn, k, v)
                     
-        def add_cs(dfg, dfe, dfparams, type):
-            # type is either slow or fast
-            if any([len(dfg)==0, len(dfe)==0, len(dfparams)==0]):
-                return
-            for pre, d in dfg[type].items():
-                if pre == 0:
-                    continue
-                for post, g in d.items():
-                    if post == 0:
-                        continue
-                    presyn = self.cells[pre]
-                    postsyn = self.cells[post]
-                    syn = h.neuronpyxl_CS(postsyn.section(0.5))
-                    params = {}
-                    # Set up parameters dictionary
-                    for k, v in dfparams[pre][post].dropna().to_dict().items():
-                        params.setdefault(k[0], {})[k[1]] = v
-                    # Get basic parameters
-                    params["g"] = g
-                    params["e"] = dfe[type][pre][post]
-                    # Get model-dependent parameters
-                    if len(params["taus"]) == 1:
-                        params["taus"]["u2"] = params["taus"]["u1"]
-                    params["taus"]["u1"] *= 1000
-                    params["taus"]["u2"] *= 1000
-                    if "Voltage dependence" in params:
-                        params["voltage_dependence"] = 1
-                        if "tx" not in params["Voltage dependence"] or params["Voltage dependence"]["tx"] == 0:
-                            params["tx"] = -1
-                        else:
-                            params["Voltage dependence"]["tx"] *= 1000
-                    if "depression" in params:
-                        params["depress"] = 1
-                        params["depression"]["ud"] *= 1000
-                        params["depression"]["ur"] *= 1000
-                    if "facilitation" in params:
-                        # Set ion facilitation pointers
-                        match params["facilitation"]["ion"].lower().strip():
-                            case "ca":
-                                syn._ref_mod = presyn.section(0.5)._ref_cai
-                            case "na":
-                                syn._ref_mod = presyn.section(0.5)._ref_nai
-                            case "k":
-                                syn._ref_mod = presyn.section(0.5)._ref_ki
-                            case "cl":
-                                syn._ref_mod = presyn.section(0.5)._ref_cli
-                            case _:
-                                raise ValueError(f'{params["facilitation"]["ion"]} is not a valid facilitation ion. Must be one of Ca, Na, K, or Cl.')
-                        params["facilitation"]["u"] *= 1000
-                        params["facilitation"]["ion"] = 1
-                    set_attr_cs_params(params, syn) # Set all parameters for the given synapse
-                    # Set up the NetCon
-                    nc = h.NetCon(presyn.section(0.5)._ref_v, syn, sec=presyn.section)
-                    nc.threshold = 0.0 # Spiking threshold set to 0 mV (same as SNNAP)
-                    nc.delay = 0.0
-                    nc.weight[0] = 0
-                    # Add items to dictionary to avoid garbage collection
-                    self.chemical_synapses[type].setdefault(pre, {})[post] = {"synapse": syn , "netcon": nc}
-                    
+        # Add chemical synapses to network
         df_csg = self.reader.csg
         df_cse = self.reader.cse
         df_cs_params_fast = self.reader.csfat_params_fast
         df_cs_params_slow = self.reader.csfat_params_slow
-        add_cs(df_csg, df_cse, df_cs_params_fast, "fast")
-        add_cs(df_csg, df_cse, df_cs_params_slow, "slow")
+        add_cs(self.chemical_synapses, self.cells, df_csg, df_cse, df_cs_params_fast, "fast")
+        add_cs(self.chemical_synapses, self.cells, df_csg, df_cse, df_cs_params_slow, "slow")
         
     
     def add_regulation_from_reader(self):
         """Function to set up ion regulation from an ion pool.
+
+        Raises:
+            ValueError: throws a value error if the ion regulator is not \
+                        one of Ca, Na, K or Cl.
         """
-        # Unit conversions for the different parameters in the spreadsheet (these may not work)
+        # Unit conversions for the different parameters in the spreadsheet
         unitconv = {"p1": {1: 1000,
                        2: 1e-6,
                        3: 1,
@@ -435,40 +476,16 @@ class Network:
                         ion_num = ions.index(ion.lower().strip()) + 1
                     except ValueError:
                         raise ValueError(f'{ion} is not a valid regulatory ion. Must be one of Ca, Na, K, or Cl.')
-                    setattr(cell.section(0.5), f"region_{self.prefix}{ch}", ion_num)
-                    setattr(cell.section(0.5), f"opt1_{self.prefix}{ch}", opt1)
-                    setattr(cell.section(0.5), f"opt2_{self.prefix}{ch}", opt2)
-                    setattr(cell.section(0.5), f"p1_{self.prefix}{ch}", p1*unitconv["p1"][opt2])
+                    setattr(cell.section(0.5), f"region_{self.mech_prefix}{ch}", ion_num)
+                    setattr(cell.section(0.5), f"opt1_{self.mech_prefix}{ch}", opt1)
+                    setattr(cell.section(0.5), f"opt2_{self.mech_prefix}{ch}", opt2)
+                    setattr(cell.section(0.5), f"p1_{self.mech_prefix}{ch}", p1*unitconv["p1"][opt2])
                     if p2_col in df.columns:
                         p2 = row[p2_col]
-                        setattr(cell.section(0.5), f"p2_{self.prefix}{ch}", p2*unitconv["p2"])
+                        setattr(cell.section(0.5), f"p2_{self.mech_prefix}{ch}", p2*unitconv["p2"])
                     if b_col in df.columns:
                         b = row[b_col]
-                        setattr(cell.section(0.5), f"b_{self.prefix}{ch}", b)
-        
-
-    def set_mech_parameter(self, name: str, param: str, val: float) -> None:
-        setattr(self.cells[name].section(0.5), param, val)
-    
-    
-    def set_cs_parameter(self, pre: str, post: str, cstype: str, param: str, val: float) -> None:
-        setattr(self.chemical_synapses[cstype][pre][post]["synapse"], param, val)
-    
-    
-    def set_es_parameter(self, pre: str, post: str, param: str, val:float) -> None:
-        setattr(self.electrical_synapses[pre][post], param, val)
-    
-
-    def get_mech_parameter(self, name: str, param: str) -> float:
-        return getattr(self.cells[name].section(0.5), param)
-    
-    
-    def get_cs_parameter(self, pre: str, post: str, cstype: str, param: str) -> float:
-        return getattr(self.chemical_synapses[cstype][pre][post]["synapse"], param)
-    
-    
-    def get_es_parameter(self, pre: str, post: str, param: str) -> float:
-        return getattr(self.electrical_synapses[pre][post], param)
+                        setattr(cell.section(0.5), f"b_{self.mech_prefix}{ch}", b)
     
     
     def set_up_v0_from_reader(self):
@@ -537,6 +554,7 @@ class Network:
             nc1.weight[0] = np.abs((e2 - e0) / (e1 - e0)) * self.noise["scale"]  # Synaptic weight in μS
             nc2 = h.NetCon(ns2, syn2)
             nc2.weight[0] = self.noise["scale"] # Synaptic weight in μS
+            # Package the objects together and add it to the class object
             self.noise_cons[name] = (
                 {"netstim": ns1, "syn": syn1, "netcon": nc1},
                 {"netstim": ns2, "syn": syn2, "netcon": nc2}
@@ -901,3 +919,99 @@ class Network:
         with open(os.path.join(self.cwd, os.path.join(folder,"info.txt")), 'w') as f:
             for key, value in metadata.items():
                 f.write(f"{key}: {value}\n")
+
+
+
+def set_activation_parameters(vdg_parameters, key, r, var):
+    """Helper function to set activation parameters of ion channel mechanisms.\
+    A and B are identical sets of equations, so this function sets all parameter \
+    values accounting for every possible variable combination that exists within \
+    the SNNAP model.
+
+    Args:
+        vdg_parameters (dict): main parameter dictionary (see below)
+        r (pd.Series): row of the df
+        key (str): ion channel mechanism
+        var (str): A or B
+    """
+    if pd.isna(r[var]["tmx"]):
+        vdg_parameters[key][f"{var}infonly"] = 1
+    for param, val in r[var].items():
+        if not pd.isna(val):
+            vdg_parameters[key][f"{param}{var}"] = val
+            if not f"{var}infonly" in vdg_parameters[key]:
+                if param == "tmx" and (r[var]["ts1"] == 0 or pd.isna(r[var]["ts1"])):
+                    vdg_parameters[key][f"tmx{var}only"] = 1
+                    vdg_parameters[key][f"num{var.lower()}taus"] = 1
+    if not pd.isna(r[var]["ts1"]) and r[var]["ts1"] != 0:
+        if pd.isna(r[var]["ts2"]) or r[var]["ts2"] == 0:
+            vdg_parameters[key][f"num{var.lower()}taus"] = 1
+        else:
+            vdg_parameters[key][f"num{var.lower()}taus"] = 2
+
+# helper method to set values of all params in below dictionaries
+def set_attr_cs_params(d, syn):
+    for k, v in d.items():
+        if isinstance(v, dict):
+            set_attr_cs_params(v, syn)
+        else:
+            setattr(syn, k, v)
+                    
+def add_cs(cs_dict, cells, dfg, dfe, dfparams, type):
+    # type is either slow or fast
+    if any([len(dfg)==0, len(dfe)==0, len(dfparams)==0]):
+        return
+    for pre, d in dfg[type].items():
+        if pre == 0:
+            continue
+        for post, g in d.items():
+            if post == 0:
+                continue
+            presyn = cells[pre]
+            postsyn = cells[post]
+            syn = h.neuronpyxl_CS(postsyn.section(0.5))
+            params = {}
+            # Set up parameters dictionary
+            for k, v in dfparams[pre][post].dropna().to_dict().items():
+                params.setdefault(k[0], {})[k[1]] = v
+            # Get basic parameters
+            params["g"] = g
+            params["e"] = dfe[type][pre][post]
+            # Get model-dependent parameters
+            if len(params["taus"]) == 1:
+                params["taus"]["u2"] = params["taus"]["u1"]
+            params["taus"]["u1"] *= 1000
+            params["taus"]["u2"] *= 1000
+            if "Voltage dependence" in params:
+                params["voltage_dependence"] = 1
+                if "tx" not in params["Voltage dependence"] or params["Voltage dependence"]["tx"] == 0:
+                    params["tx"] = -1
+                else:
+                    params["Voltage dependence"]["tx"] *= 1000
+            if "depression" in params:
+                params["depress"] = 1
+                params["depression"]["ud"] *= 1000
+                params["depression"]["ur"] *= 1000
+            if "facilitation" in params:
+                # Set ion facilitation pointers
+                match params["facilitation"]["ion"].lower().strip():
+                    case "ca":
+                        syn._ref_mod = presyn.section(0.5)._ref_cai
+                    case "na":
+                        syn._ref_mod = presyn.section(0.5)._ref_nai
+                    case "k":
+                        syn._ref_mod = presyn.section(0.5)._ref_ki
+                    case "cl":
+                        syn._ref_mod = presyn.section(0.5)._ref_cli
+                    case _:
+                        raise ValueError(f'{params["facilitation"]["ion"]} is not a valid facilitation ion. Must be one of Ca, Na, K, or Cl.')
+                params["facilitation"]["u"] *= 1000
+                params["facilitation"]["ion"] = 1
+            set_attr_cs_params(params, syn) # Set all parameters for the given synapse
+            # Set up the NetCon
+            nc = h.NetCon(presyn.section(0.5)._ref_v, syn, sec=presyn.section)
+            nc.threshold = 0.0 # Spiking threshold set to 0 mV (same as SNNAP)
+            nc.delay = 0.0
+            nc.weight[0] = 0
+            # Add items to dictionary to avoid garbage collection
+            cs_dict[type].setdefault(pre, {})[post] = {"synapse": syn , "netcon": nc}

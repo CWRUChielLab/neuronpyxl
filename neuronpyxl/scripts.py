@@ -228,7 +228,7 @@ def run_sim(
                     os.path.join(results_folder, data_file_name),
                     key="membrane", mode="a"
         )
-    else: # If all currents and concentrations are recorded, then save each cell's data in its own .h5 file.
+    else:
         if syn:
             if interp <= 0:
                 chemsyn_data, elecsyn_data = nb.get_synaptic_current_data()
