@@ -1077,6 +1077,3 @@ class Network:
         with open(os.path.join(self.cwd, os.path.join(folder,"info.txt")), 'w') as f:
             for key, value in metadata.items():
                 f.write(f"{key}: {value}\n")
-
-
-
