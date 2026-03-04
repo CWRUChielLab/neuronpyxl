@@ -23,11 +23,11 @@ PARAMETER {
 }
 
 ASSIGNED {
-    i (nA) v (mV) on () dPSM (/ms) dAv (/ms) Y () dBR (/ms) Xt ()mod (mM)
+    i (nA) v (mV) on () dPSM (/ms) dAv (/ms) Y () dreg(/ms) Xt ()mod (mM)
 }
 
 STATE {
-    At () Av () dAt (/ms) PSM () BR ()
+    At () Av () dAt (/ms) PSM () reg()
 }
 
 INITIAL {
@@ -35,7 +35,7 @@ INITIAL {
     Av = 0.0
     dAt = 0.0
     PSM = 1.0
-    BR = 0.0
+    reg= 0.0
 }
 
 BREAKPOINT {
@@ -54,17 +54,17 @@ BREAKPOINT {
         }
     }
     if (ion == 0) {
-        dBR = 0
+        dreg= 0
     } else {
-        dBR = (mod/unit_conv - BR)/u
+        dreg= (mod/unit_conv - reg)/u
     }
     if (on == 0) {
         Xt = 0.0
     } else {
         if (depress != 0) {
-            Xt = fBR(BR)*PSM
+            Xt = freg(reg)*PSM
         } else {
-            Xt = fBR(BR)
+            Xt = freg(reg)
         }
     }
     SOLVE states METHOD derivimplicit
@@ -81,18 +81,18 @@ BREAKPOINT {
 }
 
 DERIVATIVE states {
-    BR' = dBR
+    reg' = dreg
     PSM' = dPSM
     Av' = dAv
     dAt' = (Xt - (u1+u2)*dAt - At) / (u1*u2)
     At' = dAt
 }
 
-FUNCTION fBR(br) {
+FUNCTION freg(br) {
     if (ion == 0) {
-        fBR = 1
+        freg= 1
     } else {
-        fBR = 1 + br
+        freg= 1 + br
     }
 }
 

@@ -50,18 +50,20 @@ class Network:
             simdur      : float,
             seed        : bool=False
         ):
-        """_summary_
+        """Network is the main class in NEURONpyxl.
+        It is used for interfacing with NEURON and loading the Excel files.
+        It also handles simulation control and data saving.
 
         Args:
-            params_file (str): _description_
-            sim_name (str): _description_
-            noise (tuple): _description_
-            dt (float): _description_
-            integrator (int): _description_
-            atol (float): _description_
-            eq_time (float): _description_
-            simdur (float): _description_
-            seed (bool): _description_
+            params_file (str): Filepath of Excel file to read in.
+            sim_name (str): sheet in the spreadsheet to run.
+            noise (tuple): noise parameters tuple (frequency, weight, tau)
+            dt (float): timestep. If not provided, will use variables timestep and CVODE.
+            integrator (int): 1 -> Backwards Euler, 2 -> Crank-Nicholson if dt is constant.
+            atol (float): absolute error tolerance
+            eq_time (float): equilibration time
+            simdur (float): simulation duration (ms)
+            seed (bool): if True, uses deterministic seed (not working).
         """
 
         self.cwd = os.getcwd()
@@ -408,7 +410,7 @@ class Network:
                     if pool not in pools:
                         pools[pool] = {"k1": pools_data[k1_key], "k2": pools_data[k2_key]}
 
-            cell = self.cells[name]
+            cell : Cell = self.cells[name]
             ions = {}
 
             for i in range(4):
@@ -482,8 +484,14 @@ class Network:
         self._add_cs(df_csg, df_cse, df_cs_params_slow, "slow")
         
 
-    # helper method to set values of all params in below dictionaries
     def _set_attr_cs_params(self, d, syn):
+        """Helper method to recursively set values of all
+        params in below dictionaries
+
+        Args:
+            d (dict): dictionary
+            syn (hoc object): synapse, a point process
+        """
         for k, v in d.items():
             if isinstance(v, dict):
                self._set_attr_cs_params(v, syn)
@@ -492,6 +500,17 @@ class Network:
 
 
     def _add_cs(self, dfg, dfe, dfparams, type):
+        """Add chemical synapses to a network
+
+        Args:
+            dfg (pd.DataFrame): df with synaptic conductances (csg in spreadsheet)
+            dfe (pd.DataFrame): df with reversal potentials (esg in spreadsheet)
+            dfparams (pd.DataFrame): df with parameters for CS mechanism (cs_fat in spreadsheet)
+            type (str): either fast or slow
+
+        Raises:
+            ValueError: _description_
+        """
         if any(len(df) == 0 for df in [dfg, dfe, dfparams]):
             return
 
@@ -629,7 +648,7 @@ class Network:
         for name, cell in self.cells.items():
             z = h.Impedance()
             z.loc(0.5, sec=cell.section)  # Measure impedance at the center of the soma
-            z.compute(0)  # Compute impedance at frequency f=0 (DC)
+            z.compute(0)                  # Compute impedance at frequency f=0 (DC)
             self.input_resistance[name] = z.input(0.5, sec=cell.section) 
     
             
@@ -687,7 +706,8 @@ class Network:
     
     def set_seed(self):
         """
-        NOT WORKING YET
+       Doesnt seem to be working yet.
+       Intended functionality: deterministically set the seed number as a test for noisy simulations.
         """
         num_seeds = 2 * len(self.cells)  # 2 seeds per NetStim, 2 NetStims per cell
         if self.seed:
@@ -703,18 +723,17 @@ class Network:
             d2["netstim"].seed(seed2)
     
     
-    def attach_iclamp(self, name: str, delay=None, dur=None, amp=None):
-        """_summary_
+    def attach_iclamp(self, name: str, delay:float=None, dur:float=None, amp:float=None):
+        """Add an iclamp to the network
 
         Args:
-            name (str): _description_
-            loc (float, optional): _description_. Defaults to 0.5.
-            delay (_type_, optional): _description_. Defaults to None.
-            dur (_type_, optional): _description_. Defaults to None.
-            amp (_type_, optional): _description_. Defaults to None.
+            name (str): name of cell to insert iclamp
+            delay (float, optional): delay of start of current inejction (ms). Defaults to None.
+            dur (float, optional): duration of current injection (ms). Defaults to None.
+            amp (float, optional): amplitude of current injection (nA). Defaults to None.
 
         Returns:
-            _type_: _description_
+            _type_: A hoc current clamp object
         """
         assert name in self.cells, f"Cell name '{name}' not found in cells dict"
         delaytime = delay+self.eq_time+self.noise_eq_time if delay is not None else None
@@ -724,11 +743,11 @@ class Network:
 
     
     def remove_iclamp(self, name: str, index: int):
-        """_summary_
+        """Remove an IClamp from the network
 
         Args:
-            name (str): _description_
-            loc (float): _description_
+            name (str): name of clamp to remove
+            index (int): index in the list of clamp to remove (in order of time added)
         """
         assert name in self.current_clamps, \
             f"Cell '{name}' must be the name of a cell in the Network, and the IClamp must already exist"
@@ -738,6 +757,8 @@ class Network:
     
     
     def record_voltage_only(self):
+        """Record only the voltage traces of the cells in the network
+        """
         self.voltage_only = True
         self.recording["t"] = h.Vector().record(h._ref_t)
         for name, cell in self.cells.items():
@@ -807,6 +828,11 @@ class Network:
 
 
     def record(self, voltage_only: bool):
+        """Main function to record hoc pointers
+
+        Args:
+            voltage_only (bool): if passed in, only records the voltage
+        """
         if voltage_only:
             self.record_voltage_only()
         else:
@@ -833,7 +859,13 @@ class Network:
 
 
     def run(self, voltage_only: bool = False, record_none: bool = False):
-        """Runs the simulation."""
+        """Run the NEURON simulations --> record and call the correct solvers
+        Prioritizes record_none first.
+
+        Args:
+            voltage_only (bool, optional): records only the voltage. Defaults to False.
+            record_none (bool, optional): doesn't record anhything. Defaults to False.
+        """
         self.setup_run(record_none=record_none, voltage_only=voltage_only)
         print("Running simulation...")
         start_time = time.time()
@@ -914,6 +946,8 @@ class Network:
    
     def interpolate_data(self,tvec:np.array,t:np.array,y:np.array):
         # Remove duplicates and ensure t is strictly increasing
+        # I think there's a way to do this in NEURON but I havne't figured it out yet.
+        # This way is janky.
         t_sorted, unique_indices = np.unique(t, return_index=True)
         y_sorted = y[unique_indices]
         cs = CubicSpline(t_sorted, y_sorted)

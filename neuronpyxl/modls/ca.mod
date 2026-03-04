@@ -25,17 +25,17 @@ PARAMETER {
 }
 
 ASSIGNED {
-    C (mM) ica (mA/cm2) i (mA/cm2) v (mV) area (um2) nai (mM) ki (mM) cli (mM) cai (mM) dBR (/ms) A () B ()
+    C (mM) ica (mA/cm2) i (mA/cm2) v (mV) area (um2) nai (mM) ki (mM) cli (mM) cai (mM) dreg(/ms) A () B ()
 }
 
 STATE {
-    Astate () Bstate () BR ()
+    Astate () Bstate () reg()
 }
 
 INITIAL {
     Astate = 0.0
     Bstate = 0.0
-    BR = 0.0
+    reg= 0.0
 }
 
 BREAKPOINT {
@@ -51,9 +51,9 @@ BREAKPOINT {
         C = 0.0
     }
     if (opt2 == 1) {
-        dBR = (C/unit_conv-BR)/p1
+        dreg= (C/unit_conv-reg)/p1
     } else {
-        dBR = 0
+        dreg= 0
     }
     SOLVE states METHOD derivimplicit
     if (Ainfonly == 1) {
@@ -79,7 +79,7 @@ BREAKPOINT {
 DERIVATIVE states {
     Astate' = dA()
     Bstate' = dB()
-    BR' = dBR
+    reg' = dreg
 }
 
 FUNCTION current() (mA/cm2) { 
@@ -110,7 +110,7 @@ FUNCTION fbr(br) {
 
 FUNCTION br(c) {
     if (opt2 == 1) {
-        br = BR
+        br = reg
     } else if (opt2 == 2) {
         br = c/(p1+c)
     } else if (opt2 == 3) {
