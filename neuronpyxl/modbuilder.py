@@ -1,13 +1,16 @@
 """
 This file is part of neuronpyxl.
 
-The ModBuilder class is necessary for running SNNAP-like simulations. It uses the stencil files located
-in neuronpyxl/modls/ to generate the mod files. There will be 1 mod file for each ion channel, and it will use the 
-correct ion in that channel if notated properly (name of the ion channel has to start with either Cl, Ca, K, or Na,
-not case-sensitive). These files detail the equations that can be used within the simulation, the parameters
-of which are set in the NetworkBuilder class. Will use a nonspecific ion if it doesn not begin with one of those ions.
+The ModBuilder class is necessary for running SNNAP-like simulations. It uses the
+stencil files located in neuronpyxl/modls/ to generate the mod files. There will be
+1 mod file for each ion channel, and it will use the correct ion in that channel if
+notated properly (name of the ion channel has to start with either Cl, Ca, K, or Na,
+not case-sensitive). These files detail the equations that can be used within the simulation,
+the parameters of which are set in the NetworkBuilder class. Will use a nonspecific ion
+if it does not begin with one of those ions.
 
-Copyright (C) 2026 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
+Copyright (C) 2026 Uri Dickman, Peter J. Thomas, Hillel J. Chiel, John H. Byrne,
+and Curtis L. Neveu.
 
 neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -33,16 +36,17 @@ from importlib.resources import files
 
 class ModBuilder:
     def __init__(self, file: str):
-        """A class to automatically generate NMODL mod files that correspond to the SNNAP-based model in the provided spreadsheet.
-        Via the run() command, creates one mod file per current mechanism and ion pool. It also creates a file for chemical and electrical
-        synapses (cs.mod and es.mod).
+        """A class to automatically generate NMODL mod files that correspond to the 
+        SNNAP-based model in the provided spreadsheet. Through the run() command,
+        creates one mod file per current mechanism and ion pool. It also creates a file for chemical
+        and electrical synapses (cs.mod and es.mod).
 
         Args:
             file (str): file path to a .xlsx spreadsheet.
         """
-        assert file.split(sep=".")[-1] == "xlsx", f"File '{file}' must be a .xlsx file. See sample spreadsheet blank.xlsx."
+        assert file.split(sep=".")[-1] == "xlsx", f"File '{file}' must be a .xlsx file."
         self.modls_path = files("neuronpyxl.modls") # Get the files from neuronpyxl
-        self.mod_path = os.path.join(os.getcwd(), "mod") # Ensure that files are created in current working directory
+        self.mod_path = os.path.join(os.getcwd(), "mod")
         self.xls = pd.ExcelFile(file)
         self.nrows = 21 # TODO: make this adapt to the number of cells in the spreadsheet
         self.valence = {"k": 1, 
@@ -57,7 +61,8 @@ class ModBuilder:
         """Function to generate all of the mod files.
         """
         self.clear_dir("./mod", cluster) # clear out the mod directory
-        shutil.copy(self.modls_path.joinpath("cs.mod"), self.mod_path) # Copies cs.mod and es.mod whether or not they are specified in the spreadsheet.
+        # Copy cs.mod and es.mod whether or not they are specified in the spreadsheet
+        shutil.copy(self.modls_path.joinpath("cs.mod"), self.mod_path)
         shutil.copy(self.modls_path.joinpath("es.mod"), self.mod_path)
         self.gen_mech_mods() # generate current mechanism mod files
         self.gen_pool_mods() # generate ion pool mod files
@@ -70,8 +75,8 @@ class ModBuilder:
             List[str]: list of all ion pools present in the model.
         """
         def rename_df_cols(df) -> pd.DataFrame:
-            """Helper function to rename the columns of a data frame with duplicate names in a systematic way.
-            Ex: ["ion", "ion", "ion"] -> ["ion", "ion_1", "ion_2"]
+            """Helper function to rename the columns of a data frame with duplicate
+            names in a systematic way. Ex: ["ion", "ion", "ion"] -> ["ion", "ion_1", "ion_2"]
             Args:
                 df (pd.DataFrame): a dataframe with duplicate column names.
 
@@ -101,7 +106,8 @@ class ModBuilder:
             if not pd.isna(ion):
                 pool = ion.lower().strip()
                 if pool not in self.valence.keys():
-                    raise ValueError(f"Ion '{ion}' is not avaiable as an ion pool. Available ions include Ca, K, Na, and Cl (not case sensitive).")
+                    raise ValueError(f"Ion '{ion}' is not avaiable as an ion pool. \
+                                     Available ions include Ca, K, Na, and Cl (not case sensitive).")
                 if pool not in pools:
                     pools.append(re.sub(r'[^a-zA-Z0-9]', '', ion.lower().strip()))
         return pools
@@ -121,17 +127,20 @@ class ModBuilder:
             if bool(re.search(r'[^\w\s]', m)):
                 raise ValueError(f"Current mechanism '{m}' cannot contain special characters.")
             if not m[0].isalpha():
-                raise ValueError(f"Current mechanism '{m}' must start with a letter. Numbers and special characters are not allowed.")
+                raise ValueError(f"Current mechanism '{m}' must start with a letter. \
+                                 Numbers and special characters are not allowed.")
         return [re.sub(r'[^a-zA-Z0-9]', '', m.lower().strip()) for m in mechs]
 
 
     def clear_dir(self, dir_path: str, cluster:bool = False):
         """Function to clear a directory or create a new one if one doesn't exist.
-        If dir_path does exist, prompts the user if it is okay to clear that directory unless cluster == True.
+        If dir_path does exist, prompts the user if it is okay to clear that directory
+        unless cluster == True.
 
         Args:
             dir_path (str): path to clear out
-            cluster (bool): (for running on HPC) if cluster == True, does not prompt the user to clear contents of file.
+            cluster (bool): (for running on HPC) if cluster == True, does not prompt
+                            the user to clear contents of file.
         """
         if os.path.exists(dir_path):
             # Directory exists, empty it
@@ -150,7 +159,8 @@ class ModBuilder:
         Don't change this please.
         """
         def copy_and_modify_file(input_file: str, output_file: str, line_number: int, new_value: str) -> None:
-            """Helper function for gen_mech_mods. Copies and modifies the input file. Replaces the line at line_number with the new_value.
+            """Helper function for gen_mech_mods. Copies and modifies the input file.
+            Replaces the line at line_number with the new_value.
             Places new file in the location of output_file.
 
             Args:
@@ -197,8 +207,10 @@ class ModBuilder:
                     modl_path = self.modls_path.joinpath(f"nonspec.mod")
                 line12.pop(-1)
                 
-                copy_and_modify_file(modl_path, os.path.join(self.mod_path, f"{ch}.mod"), line_number, f"\tSUFFIX neuronpyxl_{ch}")
-                copy_and_modify_file(os.path.join(self.mod_path, f"{ch}.mod"), os.path.join(self.mod_path, f"{ch}.mod"), 11, "".join(line12))
+                copy_and_modify_file(modl_path, os.path.join(self.mod_path, f"{ch}.mod"), \
+                                     line_number, f"\tSUFFIX neuronpyxl_{ch}")
+                copy_and_modify_file(os.path.join(self.mod_path, f"{ch}.mod"), \
+                                     os.path.join(self.mod_path, f"{ch}.mod"), 11, "".join(line12))
     
     
     def gen_pool_mods(self):

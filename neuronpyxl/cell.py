@@ -1,11 +1,12 @@
 """
 This file is part of neuronpyxl.
 
-The Cell class treats each cell in NEURON as a custom object. Each Cell comes with a NEURON Section
-object, as well as other useful properties, such as I-V recordings and current clamps. This structure
-enables the Network class to seem more like a network, rather than leaving the cells as sections only.
+The Cell class treats each cell in NEURON as a custom object. Each Cell
+comes with a NEURON section property, as well as other useful properties,
+such as I-V recordings and current clamps.
 
-Copyright (C) 2026 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
+Copyright (C) 2026 Uri Dickman, Peter J. Thomas, Hillel J. Chiel, John H. Byrne,
+and Curtis L. Neveu.
 
 neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

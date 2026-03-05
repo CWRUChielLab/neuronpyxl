@@ -7,7 +7,8 @@ Excel spreadsheet (see examples). This file must be used to
 generate the mod files. For running simulations in a .py file
 or notebook, see the examples.
 
-Copyright (C) 2026 Uri Dickman, Curtis Neveu, Hillel Chiel, Peter Thomas
+Copyright (C) 2026 Uri Dickman, Peter J. Thomas, Hillel J. Chiel, John H. Byrne,
+and Curtis L. Neveu.
 
 neuronpyxl is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
