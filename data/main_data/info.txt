@@ -1,0 +1,11 @@
+Simulation name: main
+Model file: sheets/fig2.xlsx
+Data saved to: /home/uri/research/neuronpyxl/data/main_data/main_data.h5
+NEURON finished in: 0.0009255409240722656 s
+Simulation duration: 1000.0 ms
+Integration method: CVODE
+Timestep: variable
+Absolute error tolerance: 1e-05
+Number of cells: 1
+Number of electrical synapses: 0
+Number of chemical synapses: 0
