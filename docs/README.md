@@ -1,6 +1,7 @@
 # neuronpyxl
 
-*A tool to run SNNAP-based models from a spreadsheet interface using the NEURON simulator via Python* \
+*A tool to run SNNAP-based models from a spreadsheet interface using the NEURON simulator via Python*
+
 Author: Uri Dickman
 
 ---
@@ -24,31 +25,32 @@ If needed, see this [video](https://www.youtube.com/watch?v=jWjiPWG3DKY) for a w
 ## Installing neuronpyxl
 
 1. In the terminal, clone the [NEURONpyxl](https://github.com/CWRUChielLab/neuronpyxl) repository
+```bash
+git clone https://github.com/CWRUChielLab/neuronpyxl.git && cd neuronpyxl
 ```
-git clone https://github.com/CWRUChielLab/neuronpyxl.git
-```
-2. Change into the *neuronpyxl* folder. Install the neuronpyxl package into a virtual Python environment:
+2. Install the neuronpyxl package into a virtual Python environment:
     - With [uv](https://docs.astral.sh/uv/) (*recommended*):
-    ```
+    ```bash
     uv venv /path/to/venv --python 3.13 && source /path/to/venv/bin/activate && uv pip install .
     ```
     - With [Micromamba](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html) (*recommended*): 
-    ```
+    ```bash
     micromamba create -f environment.yml
     ```
     - With [pip](https://pypi.org/project/pip/):
     
-    ```
+    ```bash
     python3 -m venv /path/to/venv && source /path/to/venv/bin/activate && pip install .
     ```
     - With [Anaconda](https://www.anaconda.com/download): 
-    ```
+    ```bash
     conda create -f environment.yml
     ```
 3. Activate NEURONpyxl (if not already):
     - With uv or pip: `source /path/to/venv/bin/activate`
     - With Micromamba: `micromamba activate neuronpyxl`
     - With Anaconda: `conda activate neuronpyxl`
+4. Follow the [tutorial](https://github.com/CWRUChielLab/neuronpyxl/blob/main/docs/TUTORIAL.md) to get started.
 
 ---
 
@@ -59,15 +61,15 @@ neuronpyxl simulations must be run using the Excel spreadsheet. A blank spreadsh
 How to run a simulation from the command line:
 
 1. Activate virtual environment. For example
-```
+```bash
 micromamba activate neuronpyxl
 ```
 2. Compile the mod files
-```
+```bash
 neuronpyxl -f gen_mods --file path/to/excel_file.xlsx
 ```
 3. Run a simulation
-```
+```bash
 neuronpyxl -f run_sim --file path/to/excel_file.xlsx --name simname --duration simdur
 ```
 
