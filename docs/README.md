@@ -50,7 +50,7 @@ git clone https://github.com/CWRUChielLab/neuronpyxl.git && cd neuronpyxl
     - With uv or pip: `source /path/to/venv/bin/activate`
     - With Micromamba: `micromamba activate neuronpyxl`
     - With Anaconda: `conda activate neuronpyxl`
-4. Follow the [Tutorial](docs/TUTORIAL.md) to get started.
+4. Follow the [Tutorial](TUTORIAL.md) to get started.
 
 ---
 
