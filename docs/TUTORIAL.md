@@ -263,7 +263,72 @@ See [ex3.py](../examples/ex3.py) for the full simulation data processing.
 
 ### Example 4: Starting a simulation from a saved state
 
+In this example, we demonstrate how to save the state of a simulation and continue the simulation from that state.
 
+First, compile the mod files.
+
+```neuronpyxl -f gen_mods --file sheets/small_network.xlsx
+```
+
+```python
+from neuron import h
+from neuronpyxl import network
+
+filepath = "./sheets/small_network.xlsx"
+nw = Network(params_file=filepath,
+                    sim_name="synapse",
+                    dt=-1,
+                    integrator=2,
+                    atol=1e-5,
+                    eq_time=2500,
+                    simdur=13000,
+                    noise=None
+    )
+```
+
+Run the simulation to where you want to save the state
+
+```python
+nw.run(voltage_only=True)
+nw.save_state(filename="state.bin")
+```
+
+Now, you should see a file called "state.bin" that was created in the current directory.
+
+In order to restore to the state in that file, you *must* setup the entire NEURON memory structure **exactly** to when you recorded the state previously.
+
+This is very easy with NEURONpyxl, since we can just copy the code from above along with a few extra NEURON calls to make it all work.
+
+```python
+filepath = "./sheets/small_network.xlsx"
+nw_restored = network.Network(params_file=filepath,
+                            sim_name="synapse",
+                            dt=-1,
+                            integrator=2,
+                            atol=1e-5,
+                            eq_time=2500,
+                            simdur=13000,
+                            noise=None,
+                            seed=False
+                            )
+nw_restored.record_voltage_only() # We also need to set up the recordings the same
+h.stdinit()
+nw_restored.restore_state(filename="state.bin")
+```
+
+Now, the state has been restored so let's attach current clamp and see what happens. You can add anything you want to the model in this section.
+
+```python
+ic = nw_restored.attach_iclamp(name="B",delay=h.t-nw_restored.eq_time,dur=5000,amp=2)
+```
+
+Re-initialize CVODE and start the simulation where it left off for another 5 seconds.
+
+```python
+h.cvode_active(1)
+h.cvode.re_init()
+h.continuerun(h.t + 5000)
+```
 
 ---
 

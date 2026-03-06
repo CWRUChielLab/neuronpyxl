@@ -22,8 +22,6 @@ multirun_test.py
 paper2.xlsx
 meandur.py
 
-TUTORIAL.ipynb
-
 .lock~
 test*
 *.out
