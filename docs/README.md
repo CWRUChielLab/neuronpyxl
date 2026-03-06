@@ -32,7 +32,7 @@ If needed, see this [video](https://www.youtube.com/watch?v=jWjiPWG3DKY) for a w
 ```bash
 git clone https://github.com/CWRUChielLab/neuronpyxl.git && cd neuronpyxl
 ```
-2. Install the neuronpyxl package into a virtual Python environment:
+2. Install the neuronpyxl package into a virtual Python environment (make sure to use Python 3.13):
     - With [uv](https://docs.astral.sh/uv/) (*recommended*):
     ```bash
     uv venv /path/to/venv --python 3.13 && source /path/to/venv/bin/activate && uv pip install .
