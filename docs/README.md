@@ -1,4 +1,4 @@
-# neuronpyxl
+# NEURONpyxl
 
 *A tool to run SNNAP-based models from a spreadsheet interface using the NEURON simulator via Python*
 
@@ -6,15 +6,19 @@ Author: Uri Dickman
 
 ---
 
+For Linux and MacOS users, skip ahead to the section **Installing NEURONpyxl**
+
 ## Installing NEURON on Windows
 
-If running NEURONpyxl on Windows, it is *highly* recommended to use Windows Subsystem for Linux (WSL) instead to avoid the hassle of using NEURON on Windows. To install WSL, you can follow the instructions [here](https://nrn.readthedocs.io/en/8.2.6/install/install_instructions.html#windows-subsystem-for-linux-wsl-python-wheel). Once WSL is installed, skip the remaining steps and continue with the installation of NEURONpyxl.
+If you are running NEURONpyxl on Windows, it is *highly* recommended to use Windows Subsystem for Linux (WSL) instead to avoid the hassle of using NEURON on Windows. Each person's Windows system is different and NEURON needs to be manually linked to Python in order for it to work. Every single case isn't covered by this tutorial, which is why using WSL is recommended for running NEURON.
+
+To install WSL, you can follow the instructions [here](https://nrn.readthedocs.io/en/8.2.6/install/install_instructions.html#windows-subsystem-for-linux-wsl-python-wheel). Once WSL is installed, skip the remaining steps and continue with the installation of NEURONpyxl.
 
 If you have decided to run NEURON on Windows, it can work with Anaconda. Install [Anaconda](https://www.anaconda.com/download), then [NEURON](https://github.com/neuronsimulator/nrn/releases/tag/8.2.7) 8.2.7, which is compatible with Python versions 3.9-3.13).
 
 Then, go to Settings > System > About > Advanced system settings > Environment Variables. Add the following to your Path variable: *C:\path\to\anaconda3\Scripts*, *C:\path\to\anaconda3*, *C:\path\to\anaconda3\Library\bin*, and *C:\nrn\bin*.
 
-Create a new environmental variable called PYTHONPATH with the value *C:\nrn\lib\python* if it is not already there. Make sure that the NEURONHOME variable is set to *C:\nrn*. Also add *C:\nrn\lib\nrniv.exe* to your path so that you can run the `nrniv` command if needed.
+Create a new environmental variable called PYTHONPATH with the value *C:\nrn\lib\python* if it is not already there. Make sure that the NEURONHOME variable is set to *C:\nrn*. Also add *C:\nrn\lib\nrniv.exe* to your Path variable so that you can run the `nrniv` command if needed.
 
 Click "Ok" and close your settings. Test if this worked by opening a new instance of Anaconda Prompt and entering `python`. Then enter `from neuron import h, gui`. If this runs without error and the NEURON main menu appears, then you are good to go. The GUI is not needed to run neuronpyxl.
 
@@ -22,7 +26,7 @@ If needed, see this [video](https://www.youtube.com/watch?v=jWjiPWG3DKY) for a w
 
 ---
 
-## Installing neuronpyxl
+## Installing NEURONpyxl
 
 1. In the terminal, clone the [NEURONpyxl](https://github.com/CWRUChielLab/neuronpyxl) repository
 ```bash
@@ -50,7 +54,8 @@ git clone https://github.com/CWRUChielLab/neuronpyxl.git && cd neuronpyxl
     - With uv or pip: `source /path/to/venv/bin/activate`
     - With Micromamba: `micromamba activate neuronpyxl`
     - With Anaconda: `conda activate neuronpyxl`
-4. Follow the [Tutorial](TUTORIAL.md) to get started.
+4. Create a spreadsheet model by following the [Spreadsheet Tutorial](NEURONpyxl_spreadsheet_tutorial.pdf).
+5. Run NEURONpyxl in the command line (see reference below), or use the Python API (see the [Python API Tutorial](TUTORIAL.md)).
 
 ---
 
@@ -73,7 +78,7 @@ neuronpyxl -f gen_mods --file path/to/excel_file.xlsx
 neuronpyxl -f run_sim --file path/to/excel_file.xlsx --name simname --duration simdur
 ```
 
-This saves your data into one or more HDF5 files located in "Data/simname_data/". There are other parameters to further customize your simulation.
+This saves your data into one or more HDF5 files located in "data/simname_data/". There are other parameters to further customize your simulation, explained in the reference below.
 
 # Command Line Interface Reference
 
@@ -235,13 +240,13 @@ neuronpyxl run_sim --file single_neuron.xlsx --name main --duration 5000
 
 **With noise and synaptic recording:**
 ```bash
-python run_sim.py --file sheets/small_nework.xlsx --name main --duration 5000 \
+neuronpyxl run_sim --file sheets/small_nework.xlsx --name main --duration 5000 \
                   --noise 100 1e-4 12 --syn
 ```
 
 **Fixed timestep with interpolation, record voltage only saved to custom folder:**
 ```bash
-python run_sim.py --file sheets/small_nework.xlsx --name main --duration 5000 \
+neuronpyxl run_sim --file sheets/small_nework.xlsx --name main --duration 5000 \
                   --step 0.05 --interp 0.1 --vonly --folder small_nework_results
 ```
 

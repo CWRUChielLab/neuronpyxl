@@ -8,10 +8,11 @@
 |---------|---------------|-------------------------------------------------|
 | 1       | Basic         | Reading in data generated from NEURONpyxl CLI   |
 | 2       | Basic         | Benchmarking NEURONpyxl simulations             |
-| 3       | Basic         | Recording STATE variables                       |
-| 4       | Intermediate  | Parameter sweep                                 |
-| 5       | Intermediate  | Starting a simulation from saved state          |
-| 6       | Advanced      | Parameter sweep using Python multiprocessing    |
+| 3       | Basic         | Recording NEURON objects                        |
+| 4       | Basic         | Starting a simulation from saved state          |
+| 5       | Intermediate  | Parameter sweep                                 |
+| 6       | Intermediate  | Variable input current                          |
+| 7       | Advanced      | Parameter sweep using Python multiprocessing    |
 ---
 
 ## Prerequisites
@@ -132,14 +133,136 @@ Expected output:
 ... ...         ...             ...         ...         ...             ...     ...
 ```
 
+As you can see, NEURONpyxl saves the membrane potential, all of the ion currents, the total applied current, and the time.
+When we include noise, NEURONpyxl also saves the total injected noisy current.
+
+Plot the membrane voltage and injected current:
+```python
+t = B4_data["t"]/1000           # Convert to seconds
+v = B4_data["V"]                # Get membrane potential
+iapp = B4_data["I_app"]         # Get applied current
+
+fig,axs = plt.subplots(2,1,figsize=(12,8),sharex=True)
+axs[0].plot(t,v)
+axs[0].set_ylabel("Voltage (mV)")
+
+axs[1].plot(t,iapp)
+axs[1].set_ylabel("Applied current (nA)")
+
+fig.supxlabel("Time (s)")
+fig.suptitle("Simple B4 Neuron Simulation")
+
+plt.show()
+```
+
 ---
 
 ### Example 2: Benchmarking NEURONpyxl simulations
 
+The goal of this example is to benchmark noisy NEURON simulations of a single neuron. The steps are
+1. Compile the mod files
+```bash
+neuronpyxl -f gen_mods --file sheets/single_neuron.xlsx
+```
+2. Construct a Network object without and with noise
+
+```python
+import numpy as np
+from neuronpyxl import Network
+
+excel_path = "sheets/single_neuron.xlsx"
+simdur = 9000
+eq_time = 1000
+
+nw = Network(
+    params_file=excel_path,
+    sim_name="main",
+    noise=(500,1e-3,3), # Replace with None for no noise
+    dt=-1,
+    integrator=2,
+    atol=1e-5,
+    eq_time=eq_time,
+    simdur=simdur
+)
+```
+
+3. Run 20 simulations for each network
+```python
+N = 20
+times = np.zeros(N)
+
+for i in range(N):
+    nw.run(record_none=True)    # We're not using any data so don't record anything
+    times[i] = nw.simtime       # NEURONpyxl records the simulation time already
+```
+
+4. Compute the mean times 
+```python
+mean = np.mean(times)
+std = np.std(times)
+```
+
+We expect to see that with adaptivity, the simulations with noise take much longer than without noise because CVODE uses smaller timesteps when there are steeper gradients in the
+dynamical variables.
+
+See [ex2.py](../examples/ex2.py) for the full simulation.
 
 ---
 
-### Example 3: Recording STATE variables
+### Example 3: Recording NEURON objects
+
+This example shows how to interface with NEURON and the NEURONpyxl data structures to record state variables other than currents and voltages.
+
+As always, compile the mod files:
+
+```bash
+neuronpyxl -f gen_mods --file sheets/small_network.xlsx
+```
+
+Next, construct a small network of 3 neurons connected with chemical synapses.
+
+```python
+import matplotlib.pyplot as plt
+from neuronpyxl import network
+from neuron import h
+
+filepath = "./sheets/small_network.xlsx"
+nw = network.Network(
+    params_file=filepath,
+    sim_name="synapse",
+    dt=-1,
+    integrator=2,
+    atol=1e-5,
+    eq_time=2500,
+    simdur=5000,
+    noise=None,
+    seed=False,
+)
+
+seg_a = nw.cells["A"].section(0.5)                       # Get the NEURON segment of cell A at location 0.5
+synw = nw.chemical_synapses["fast"]["A"]["B"]["synapse"] # Get the fast synapse hoc object from A -> B
+
+# Record during simulation
+Ana_rec = h.Vector().record(seg_a._ref_A_neuronpyxl_na)  # Na activation
+nai_rec = h.Vector().record(seg_a._ref_nai)              # Internal Na concentration
+Atsyn_rec = h.Vector().record(synw._ref_At)              # Synaptic time-dependent activation
+t_rec = h.Vector().record(h._ref_t)                      # Time
+
+nw.run(record_none=True)                                 # We only want our own recordings
+```
+
+`segment._ref_` records the value of the hoc pointer at that NEURON segment.
+Follow the `_ref_` with the variable name you want to record (see the mod files) and then the mechanism in which they are defined.
+NEURONpyxl mechanism names start with neuronpyxl_.
+There are other global pointers. The time pointer is in the `h` object, and in Point Processes like synapses and ion pools, you don't need a mechanism definition.
+Instead of accessing from a segment, you access it from the point process object (like h.IClamp or h.neuronpyxl_CS).
+
+See [ex3.py](../examples/ex3.py) for the full simulation data processing.
+
+---
+
+### Example 4: Starting a simulation from a saved state
+
 
 
 ---
@@ -149,7 +272,8 @@ Expected output:
 
 ---
 
-### Example 6: Starting a simulation from saved state
+### Example 6: Variable input current
+
 
 
 ---
@@ -162,6 +286,6 @@ Expected output:
 ## Further Reading
 
 - [NEURONpyxl paper](https://google.com)
-- [README](https://github.com/CWRUChielLab/neuronpyxl/blob/main/docs/README.md)
+- [README](./README.md)
 - [NEURON tutorials](https://neuron.yale.edu/docs)
-- [Source Code](https://github.com/CWRUChielLab/neuronpyxl)
+- [Source Code](../neuronpyxl)
