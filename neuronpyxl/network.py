@@ -1024,6 +1024,7 @@ class Network:
             filename (str): name of the state file to restore.
 
         """
+        h.stdinit()
         ss = h.SaveState()
         sf = h.File(filename)
         ss.fread(sf)

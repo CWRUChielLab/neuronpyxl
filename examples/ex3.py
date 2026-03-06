@@ -1,10 +1,21 @@
+"""
+Ex 3: Recording state variables
+
+Construct a network, record and plot synaptic and channel activations.
+
+First, generate the mod files by running:
+    neuronpyxl -f gen_mods --file sheets/small_network.xlsx
+Then run this file with:
+    python examples/ex3.py
+"""
+
 import matplotlib.pyplot as plt
 from neuronpyxl import network
 from neuron import h
 
 
 # --- Simulation Setup ---
-filepath = "./sheets/fig5.xlsx"
+filepath = "sheets/small_network.xlsx"
 nw = network.Network(
     params_file=filepath,
     sim_name="synapse",

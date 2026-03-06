@@ -1,20 +1,20 @@
 """
-Ex 1: Benchmarking simulations
+Ex 2: Benchmarking simulations
 
 Construct 2 NEURONpyxl networks: 1 with noise and one without.
 Report the mean and standard deviation simulation times for each case
 for 10 iterations.
 
 First, generate the mod files by running:
-    neuronpyxl -f gen_mods --file sheets/fig2.xlsx
+    neuronpyxl -f gen_mods --file sheets/single_neuron1.xlsx
 Then run this file with:
-    python examples/ex1.py
+    python examples/ex2.py
 """
 
 import numpy as np
 from neuronpyxl import Network
 
-excel_path = "sheets/fig2.xlsx"
+excel_path = "sheets/single_neuron1.xlsx"
 simdur = 9000
 eq_time = 1000
 

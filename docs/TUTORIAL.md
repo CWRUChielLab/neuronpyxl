@@ -8,11 +8,10 @@
 |---------|---------------|-------------------------------------------------|
 | 1       | Basic         | Reading in data generated from NEURONpyxl CLI   |
 | 2       | Basic         | Benchmarking NEURONpyxl simulations             |
-| 3       | Basic         | Recording NEURON objects                        |
-| 4       | Basic         | Starting a simulation from saved state          |
+| 3       | Intermediate  | Recording NEURON objects                        |
+| 4       | Intermediate  | Starting a simulation from saved state          |
 | 5       | Intermediate  | Parameter sweep                                 |
 | 6       | Intermediate  | Variable input current                          |
-| 7       | Advanced      | Parameter sweep using Python multiprocessing    |
 ---
 
 ## Prerequisites
@@ -41,9 +40,9 @@ excel_file = "path/to/excel/file.xlsx"
 
 ### Example 1: Reading in data generated from NEURONpyxl CLI
 
-First, generate the mod files for the spreadsheet *sheets/single_neuron.xlsx*
+First, generate the mod files for the spreadsheet *sheets/single_neuron1.xlsx*
 ```bash
-neuronpyxl -f gen_mods --file sheets/single_neuron.xlsx
+neuronpyxl -f gen_mods --file sheets/single_neuron2.xlsx
 ```
 
 Expected output (Linux):
@@ -80,7 +79,7 @@ Successfully created x86_64/special
 Next, run a simulation of that spreadsheet with a duration of 9000 ms, recording only the voltage, and using the current injections from the "main.smu" sheet in *fig2.xlsx*.
 
 ```bash
-neuronpyxl -f run_sim --file sheets/single_neuron.xlsx --name main --duration 9000
+neuronpyxl -f run_sim --file sheets/single_neuron2.xlsx --name excitability --duration 9000
 ```
 
 Expected output:
@@ -99,16 +98,16 @@ Read in the data:
 import pandas as pd
 import matplotlib.pyplot as plt
 
-filepath = "data/main_data/main_data.h5"                  # Path to the data file that was generated
-file = pd.HDFStore(filepath)                    # Read in the data file
+filepath = "data/excitability_data/excitability_data.h5" # Path to the data file
+file = pd.HDFStore(filepath)                             # Read in the data file
 keys = file.keys()
 print(f"File {filepath} has keys: \
-      {[k.replace("/","") for k in keys]}")     # Print keys in the data file
+      {[k.replace("/","") for k in keys]}")              # Print keys in the data file
 ```
 
 Expected output:
 ```bash
-File data/main_data/main_data.h5 has keys: ['B4']
+File data/excitability_data/excitability_data.h5 has keys: ['B4']
 ```
 
 **Note:**
@@ -162,7 +161,7 @@ plt.show()
 The goal of this example is to benchmark noisy NEURON simulations of a single neuron. The steps are
 1. Compile the mod files
 ```bash
-neuronpyxl -f gen_mods --file sheets/single_neuron.xlsx
+neuronpyxl -f gen_mods --file sheets/single_neuron1.xlsx
 ```
 2. Construct a Network object without and with noise
 
@@ -170,7 +169,7 @@ neuronpyxl -f gen_mods --file sheets/single_neuron.xlsx
 import numpy as np
 from neuronpyxl import Network
 
-excel_path = "sheets/single_neuron.xlsx"
+excel_path = "sheets/single_neuron1.xlsx"
 simdur = 9000
 eq_time = 1000
 
@@ -267,7 +266,8 @@ In this example, we demonstrate how to save the state of a simulation and contin
 
 First, compile the mod files.
 
-```neuronpyxl -f gen_mods --file sheets/small_network.xlsx
+```bash
+neuronpyxl -f gen_mods --file sheets/small_network.xlsx
 ```
 
 ```python
@@ -311,18 +311,21 @@ nw_restored = network.Network(params_file=filepath,
                             noise=None,
                             seed=False
                             )
-nw_restored.record_voltage_only() # We also need to set up the recordings the same
-h.stdinit()
+
+# We also need to set up the recordings the same
+# but without calling the entire initialization sequence
+# (which resets the dynamical variables and the global time)
+nw_restored.record_voltage_only()
 nw_restored.restore_state(filename="state.bin")
 ```
 
-Now, the state has been restored so let's attach current clamp and see what happens. You can add anything you want to the model in this section.
+Now, the state has been restored so let's attach current clamp. You can add anything you want to the model in this section.
 
 ```python
 ic = nw_restored.attach_iclamp(name="B",delay=h.t-nw_restored.eq_time,dur=5000,amp=2)
 ```
 
-Re-initialize CVODE and start the simulation where it left off for another 5 seconds.
+Re-initialize CVODE and start the simulation where it left off, advancing for another 5 seconds.
 
 ```python
 h.cvode_active(1)
@@ -330,21 +333,122 @@ h.cvode.re_init()
 h.continuerun(h.t + 5000)
 ```
 
+See [ex4.py](examples/ex4.py)
+
 ---
 
 ### Example 5: Parameter sweep
 
+In this example, we demonstrate a simple parameter sweep using a simple Python over a range of parameter values. We show the increase in frequency of the voltage of a single spiking neuron in response to increasing the injected current.
+
+First, build the mod files.
+
+```bash
+neuronpyxl -f gen_mods --file sheets/single_neuron2.xlsx
+```
+
+Instead of defining the current clamp in, we attach it to the network using the `attach_iclamp` function in the Network class, which returns the hoc IClamp object.
+
+```python
+nw = Network(params_file=filepath,
+                            sim_name="nostim",
+                            dt=-1,
+                            integrator=2,
+                            atol=1e-5,
+                            eq_time=1000,
+                            simdur=9000,
+                            noise=None,
+                            seed=False
+            )
+ic = nw.attach_iclamp(name="B4",delay=2000,dur=5000)
+```
+
+We define a function in [ex5.py](examples/ex5.py) to compute the mean frequency of a spiking neuron, where a spike is detected when the voltage exceeds $-10$ mV. Then, we iterate across several values of current. We can see where the onset of spiking occurs and the relationship of spike frequency and total current injected.
+
+```python
+currents = np.linspace(0,15,num=20)
+frequencies = np.zeros_like(currents)
+
+# Do the parameter sweep
+for i,amp in enumerate(currents):
+    ic.amp = amp                            # Set the current amplitude
+    print(f"Amplitude set to {ic.amp} nA")
+    
+    nw.run(voltage_only=True)               # Only record membrane voltage
+    data = nw.get_cell_data("B4")           # Get data from NEURONpyxl  
+
+    f = mean_spike_freq(data["t"],data["V"])
+    frequencies[i] = f
+```
+
+See [ex5.py](examples/ex5.py) for the full simulation.
 
 ---
 
 ### Example 6: Variable input current
 
+Just like the previous example, compile the mod files and construct the Network.
 
+```bash
+neuronpyxl -f gen_mods --file sheets/single_neuron2.xlsx
+```
 
----
+```python
+filepath = "./sheets/single_neuron2.xlsx"
+nw = Network(params_file=filepath,
+                            sim_name="nostim",
+                            dt=-1,
+                            integrator=2,
+                            atol=1e-5,
+                            eq_time=1000,
+                            simdur=10000,
+                            noise=None
+            )
 
-### Example 7: Parameter sweep using Python multiprocessing
+ic = nw.attach_iclamp(name="B4",delay=0,dur=1e9)
+```
 
+Next, define a sinusoidal current with frequency 0.5 Hz and amplitude 2 nA.
+
+```python
+f = 0.5                     # Frequency in Hz
+w = 2 * np.pi * f / 1000    # Angular frequency in rad/ms
+A = 2                       # Current amplitude in nA
+t = np.linspace(nw.eq_time,nw.simdur+nw.eq_time,10000)
+sin_current = A * np.sin(w*t) + A
+
+# Convert time series to hoc Vector
+tvec = h.Vector(t)
+ivec = h.Vector(sin_current)
+```
+
+Now, play the current vector into the amplitude of the current clamp.
+
+```python
+ivec.play(ic._ref_amp, tvec, True)
+```
+
+Run the simulation, get the data and plot.
+
+```python
+nw.run()
+B4_data = pd.DataFrame(nw.get_cell_data("B4"))
+t = B4_data["t"] / 1000
+
+fig,axs = plt.subplots(2,1,figsize=(12,8),sharex=True)
+axs[0].plot(t,B4_data["V"])
+axs[0].set_ylabel("Voltage (mV)")
+
+axs[1].plot(t,B4_data["I_app"])
+axs[1].set_ylabel("Applied current (nA)")
+
+fig.supxlabel("Time (s)")
+fig.suptitle("B4 Neuron with Oscillatory Current")
+
+plt.show()
+```
+
+See [ex6.py](examples/ex6.py) for the full simulation.
 
 ---
 

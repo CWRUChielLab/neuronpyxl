@@ -2,7 +2,6 @@ __pycache__/
 x86_64/
 .ipynb_checkpoints/
 .mypy_cache/
-*.egg-info
 build/
 
 Data/
@@ -31,3 +30,5 @@ test*
 *.sh
 *.h5
 *.bin
+*.ipynb
+*.egg-info
