@@ -5,7 +5,7 @@ First, generate the mod files by running:
     neuronpyxl -f gen_mods --file sheets/single_neuron2.xlsx
 Run the simulation with:
       neuronpyxl -f run_sim --file sheets/single_neuron2.xlsx \
-                            --name excitability --duration 9000
+                            --name excitability --duration 9000 --method 3
 Then run this file with:
     python examples/ex1.py
 """

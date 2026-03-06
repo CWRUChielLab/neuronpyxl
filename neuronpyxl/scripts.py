@@ -63,8 +63,8 @@ def add_arguments():
                         help="Sets a seed for all of the NetStims so that simulations are deterministic.\
                         If not provided, chooses a different random seed for each stim. \
                         In both cases, the NetStims are independent.")
-    parser.add_argument('--method', type=int, choices=[1, 2], default=2,
-                        help="Method of integration. 1 for Backwards Euler and 2 for Crank-Nicholson (default).")
+    parser.add_argument('--method', type=int, choices=[1, 2, 3], default=3,
+                        help="Method of integration. 1 -> Backwards Euler, 2 -> Crank-Nicholson, 3 -> CVODE (default).")
     parser.add_argument('--step', type=float, default=-1.,
                         help="Time step of the integration in ms. If not provided, \
                             will default to variable timestep Crank-Nicholson.")

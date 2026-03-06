@@ -121,11 +121,13 @@ class Network:
 
         ############ Simulation setup parameters #############
         self.dt = dt                    # Timestep
-        self.integrator = integrator    # 1: Backwards Euler, 2: Crank-Nicholson
+        self.integrator = integrator    # 1: Backwards Euler, 2: Crank-Nicholson, 3: CVODE
         match self.integrator:
             case 1:
                 self.secondorder = 0
             case 2:
+                self.secondorder = 2
+            case 3:
                 self.secondorder = 2
         self.atol = atol
         self.interp = 0.005             # Interpolation timestep default
@@ -846,7 +848,7 @@ class Network:
 
         if self.dt > 0:
             h.dt = self.dt
-        else:
+        if self.integrator == 3:
             h.cvode.active(True)
             h.cvode.atol(self.atol)
             h.cvode.maxstep(10)
@@ -1061,7 +1063,7 @@ class Network:
                     "Data saved to": f"./Data/{self.sim_name}_data/",
                     "NEURON finished in": f"{self.simtime} s",
                     "Simulation duration": f"{self.simdur} ms",
-                    "Integration method": method[self.integrator if self.dt > 0 else 3],
+                    "Integration method": method[self.integrator],
                     "Timestep": get_timestep(self.dt),
                     "Absolute error tolerance": self.atol,
                     "Number of cells": len(self.cells),

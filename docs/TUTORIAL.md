@@ -76,10 +76,11 @@ Thread Safe
 Successfully created x86_64/special
 ```
 
-Next, run a simulation of that spreadsheet with a duration of 9000 ms, recording only the voltage, and using the current injections from the "main.smu" sheet in *fig2.xlsx*.
+Next, run a simulation of that spreadsheet with a duration of 9000 ms, recording only the voltage with the CVODE integrators, and using the current injections from the "main.smu" sheet in *fig2.xlsx*.
 
 ```bash
-neuronpyxl -f run_sim --file sheets/single_neuron2.xlsx --name excitability --duration 9000
+neuronpyxl -f run_sim --file sheets/single_neuron2.xlsx \
+                      --name excitability --duration 9000 --method 3
 ```
 
 Expected output:

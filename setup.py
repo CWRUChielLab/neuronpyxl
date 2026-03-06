@@ -24,7 +24,7 @@ else:
 # List of all modules involved with the project
 MODULES = ["cell", "modbuilder", "network", "reader"]
 
-with open("README.md", 'r') as f:
+with open("docs/README.md", 'r') as f:
     README = f.read()
 
 setup(
