@@ -155,6 +155,8 @@ fig.suptitle("Simple B4 Neuron Simulation")
 plt.show()
 ```
 
+See [ex1.py](../examples/ex1.py) for the plotting script.
+
 ---
 
 ### Example 2: Benchmarking NEURONpyxl simulations
@@ -334,7 +336,7 @@ h.cvode.re_init()
 h.continuerun(h.t + 5000)
 ```
 
-See [ex4.py](examples/ex4.py)
+See [ex4.py](../examples/ex4.py)
 
 ---
 
@@ -382,7 +384,7 @@ for i,amp in enumerate(currents):
     frequencies[i] = f
 ```
 
-See [ex5.py](examples/ex5.py) for the full simulation.
+See [ex5.py](../examples/ex5.py) for the full simulation.
 
 ---
 
@@ -449,7 +451,7 @@ fig.suptitle("B4 Neuron with Oscillatory Current")
 plt.show()
 ```
 
-See [ex6.py](examples/ex6.py) for the full simulation.
+See [ex6.py](../examples/ex6.py) for the full simulation.
 
 ---
 
