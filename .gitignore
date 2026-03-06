@@ -24,6 +24,7 @@ meandur.py
 
 TUTORIAL.ipynb
 
+.lock~
 test*
 *.out
 *.csv
