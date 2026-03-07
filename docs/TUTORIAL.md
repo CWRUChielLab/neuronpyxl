@@ -76,7 +76,7 @@ Thread Safe
 Successfully created x86_64/special
 ```
 
-Next, run a simulation of that spreadsheet with a duration of 9000 ms, recording only the voltage with the CVODE integrators, and using the current injections from the "main.smu" sheet in *fig2.xlsx*.
+Next, run a simulation of that spreadsheet with a duration of 9000 ms, recording only the voltage with the CVODE integrators, and using the current injections from the "excitability.smu" sheet in *sheets/single_neuron2.xlsx*.
 
 ```bash
 neuronpyxl -f run_sim --file sheets/single_neuron2.xlsx \
@@ -89,8 +89,8 @@ Added Cell(gid=1, name=cell) to the network.
 Loading simulation parameters...
 Running simulation...
 Saving data...
-Simulation complete! Data has been saved to /path/to/neuronpyxl/data/main_data/main_data.h5.          
-Simulation info can be found in /path/to/neuronpyxl/data/main_data/info.txt
+Simulation complete! Data has been saved to /path/to/neuronpyxl/data/excitability_data/excitability_data.h5.          
+Simulation info can be found in /path/to/neuronpyxl/data/excitability_data/info.txt
 ```
 
 Read in the data:

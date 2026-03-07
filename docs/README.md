@@ -71,11 +71,11 @@ micromamba activate neuronpyxl
 ```
 2. Compile the mod files
 ```bash
-neuronpyxl -f gen_mods --file path/to/excel_file.xlsx
+neuronpyxl -f gen_mods --file <filename>
 ```
 3. Run a simulation
 ```bash
-neuronpyxl -f run_sim --file path/to/excel_file.xlsx --name simname --duration simdur
+neuronpyxl -f run_sim --file <filename> --name <simname> --duration s<imdur> [options]
 ```
 
 This saves your data into one or more HDF5 files located in "data/simname_data/". There are other parameters to further customize your simulation, explained in the reference below.
