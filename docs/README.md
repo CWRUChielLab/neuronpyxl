@@ -12,7 +12,7 @@ For Linux and MacOS users, skip ahead to the section **Installing NEURONpyxl**
 
 If you are running NEURONpyxl on Windows, it is *highly* recommended to use Windows Subsystem for Linux (WSL) instead to avoid the hassle of using NEURON on Windows. Each person's Windows system is different and NEURON needs to be manually linked to Python in order for it to work. Every single case isn't covered by this tutorial, which is why using WSL is recommended for running NEURON.
 
-To install WSL, you can follow the instructions [here](https://nrn.readthedocs.io/en/8.2.6/install/install_instructions.html#windows-subsystem-for-linux-wsl-python-wheel). Once WSL is installed, skip the remaining steps and continue with the installation of NEURONpyxl.
+To install WSL, you can follow the instructions [here](https://learn.microsoft.com/en-us/windows/wsl/install). Once WSL is installed, skip the remaining steps and continue with the installation of NEURONpyxl.
 
 If you have decided to run NEURON on Windows, it can work with Anaconda. Install [Anaconda](https://www.anaconda.com/download), then [NEURON](https://github.com/neuronsimulator/nrn/releases/tag/8.2.7) 8.2.7, which is compatible with Python versions 3.9-3.13).
 
