@@ -13,5 +13,5 @@ dependencies:
   - matplotlib
   - pip
   - pip:
-    - -e ./
+    - ./
     - neuron==8.2.7; sys_platform != "win32"
