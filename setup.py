@@ -15,10 +15,10 @@ reqs = [
 ]
 
 if os_name == "Linux" or os_name == "Darwin":
-    reqs.append("neuron==8.2.7")
+    reqs.append("neuron==9.0.1")
 else:
     warnings.warn("For running neuronpyxl on Windows,\
-                  make sure to install NEURON 8.2.7 before installing neuronpyxl.")
+                  make sure to install NEURON 9.0.1 before installing neuronpyxl.")
 
 
 # List of all modules involved with the project

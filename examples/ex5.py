@@ -48,7 +48,7 @@ filepath = "sheets/single_neuron2.xlsx"
 nw = Network(params_file=filepath,
                             sim_name="nostim",
                             dt=-1,
-                            integrator=2,
+                            integrator=3,
                             atol=1e-5,
                             eq_time=1000,
                             simdur=9000,

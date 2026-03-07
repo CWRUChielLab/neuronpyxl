@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - anaconda
 dependencies:
-  - python=3.13
+  - python=3.14
   - numpy>=2.1.2
   - pandas>=2.2.3
   - XlsxWriter>=3.2.0
@@ -14,4 +14,4 @@ dependencies:
   - pip
   - pip:
     - ./
-    - neuron==8.2.7; sys_platform != "win32"
+    - neuron==9.0.1; sys_platform != "win32"

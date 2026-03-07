@@ -14,7 +14,7 @@ If you are running NEURONpyxl on Windows, it is *highly* recommended to use Wind
 
 To install WSL, you can follow the instructions [here](https://learn.microsoft.com/en-us/windows/wsl/install). Once WSL is installed, skip the remaining steps and continue with the installation of NEURONpyxl.
 
-If you have decided to run NEURON on Windows, it can work with Anaconda. Install [Anaconda](https://www.anaconda.com/download), then [NEURON](https://github.com/neuronsimulator/nrn/releases/tag/8.2.7) 8.2.7, which is compatible with Python versions 3.9-3.13).
+If you have decided to run NEURON on Windows, it can work with Anaconda. Install [Anaconda](https://www.anaconda.com/download), then [NEURON](https://github.com/neuronsimulator/nrn/releases/tag/8.2.7) 8.2.4-9.0.1 (check Python compatibility, e.g. NEURON 8.2.7 is compatible with Python 3.9-3.13, while 9.0.1 is compatible with 3.10-3.14).
 
 Then, go to Settings > System > About > Advanced system settings > Environment Variables. Add the following to your Path variable: *C:\path\to\anaconda3\Scripts*, *C:\path\to\anaconda3*, *C:\path\to\anaconda3\Library\bin*, and *C:\nrn\bin*.
 
@@ -32,7 +32,7 @@ If needed, see this [video](https://www.youtube.com/watch?v=jWjiPWG3DKY) for a w
 ```bash
 git clone https://github.com/CWRUChielLab/neuronpyxl.git && cd neuronpyxl
 ```
-2. Install the neuronpyxl package into a virtual Python environment (make sure to use Python 3.13):
+2. Install the neuronpyxl package into a virtual Python environment. Be sure to check Python compatibility: NEURON 8.2.7 is compatible with Python 3.9-3.13, while 9.0.1 is compatible with 3.10-3.14. The default NEURON version for NEURONpyxl is 9.0.1 with Python 3.14, but there have been reported performance decreases with 9.0.1 (Issues [#2787](https://github.com/neuronsimulator/nrn/issues/2787) and [#3637](https://github.com/neuronsimulator/nrn/issues/3637)). NEURONpyxl was tested primarily with NEURON 8.2.7 and Python 3.13.
     - With [uv](https://docs.astral.sh/uv/) (*recommended*):
     ```bash
     uv venv /path/to/venv --python 3.13 && source /path/to/venv/bin/activate && uv pip install .
