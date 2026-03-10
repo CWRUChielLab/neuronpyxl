@@ -14,7 +14,7 @@ If you are running NEURONpyxl on Windows, it is *highly* recommended to use Wind
 
 To install WSL, you can follow the instructions [here](https://learn.microsoft.com/en-us/windows/wsl/install). Once WSL is installed, skip the remaining steps and continue with the installation of NEURONpyxl using the steps below.
 
-On Windows, NEURON is compatible with the Anaconda package manager. Install [Anaconda](https://www.anaconda.com/download), then [NEURON](https://github.com/neuronsimulator/nrn/releases/tag/8.2.7) 8.2.4-9.0.1 (check Python compatibility, e.g. NEURON 8.2.7 is compatible with Python 3.9-3.13, while 9.0.1 is compatible with 3.10-3.14).
+On Windows, NEURON is compatible with the Anaconda package manager. Install [Anaconda](https://www.anaconda.com/download), then [NEURON](https://github.com/neuronsimulator/nrn/releases) 8.2.4-9.0.1 (check Python compatibility, e.g. NEURON 8.2.7 is compatible with Python 3.9-3.13, while 9.0.1 is compatible with 3.10-3.14).
 
 Then, go to Settings > System > About > Advanced system settings > Environment Variables. Add the following to your Path variable: *C:\path\to\anaconda3\Scripts*, *C:\path\to\anaconda3*, *C:\path\to\anaconda3\Library\bin*, and *C:\nrn\bin*.
 
