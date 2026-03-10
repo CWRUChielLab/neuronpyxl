@@ -10,7 +10,7 @@ For Linux and MacOS users, skip ahead to the section **Installing NEURONpyxl**
 
 ## Installing NEURON on Windows
 
-If you are running NEURONpyxl on Windows, it is *highly* recommended to use Windows Subsystem for Linux (WSL) instead of using NEURON on Windows. On Windows systems, ensure that NEURON and Pythonare linked.
+If you are running NEURONpyxl on Windows, it is *highly* recommended to use Windows Subsystem for Linux (WSL) instead of using NEURON on Windows. On Windows systems, ensure that NEURON and Python are linked.
 
 To install WSL, you can follow the instructions [here](https://learn.microsoft.com/en-us/windows/wsl/install). Once WSL is installed, skip the remaining steps and continue with the installation of NEURONpyxl using the steps below.
 
