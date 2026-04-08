@@ -15,6 +15,7 @@ figs/
 Examples/
 Dickman_etal_2025_Figures/
 
+sheets/big_network_old.xlsx
 sim_log.txt
 debug.py
 multirun_test.py
