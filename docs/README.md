@@ -10,11 +10,11 @@ For Linux and MacOS users, skip ahead to the section **Installing NEURONpyxl**
 
 ## Installing NEURON on Windows
 
-If you are running NEURONpyxl on Windows, it is *highly* recommended to use Windows Subsystem for Linux (WSL) instead to avoid the hassle of using NEURON on Windows. Each person's Windows system is different and NEURON needs to be manually linked to Python in order for it to work. Every single case isn't covered by this tutorial, which is why using WSL is recommended for running NEURON.
+If you are running NEURONpyxl on Windows, it is *highly* recommended to use Windows Subsystem for Linux (WSL) instead of using NEURON on Windows. On Windows systems, ensure that NEURON and Python are linked.
 
-To install WSL, you can follow the instructions [here](https://learn.microsoft.com/en-us/windows/wsl/install). Once WSL is installed, skip the remaining steps and continue with the installation of NEURONpyxl.
+To install WSL, you can follow the instructions [here](https://learn.microsoft.com/en-us/windows/wsl/install). Once WSL is installed, skip the remaining steps and continue with the installation of NEURONpyxl using the steps below.
 
-If you have decided to run NEURON on Windows, it can work with Anaconda. Install [Anaconda](https://www.anaconda.com/download), then [NEURON](https://github.com/neuronsimulator/nrn/releases/tag/8.2.7) 8.2.4-9.0.1 (check Python compatibility, e.g. NEURON 8.2.7 is compatible with Python 3.9-3.13, while 9.0.1 is compatible with 3.10-3.14).
+On Windows, NEURON is compatible with the Anaconda package manager. Install [Anaconda](https://www.anaconda.com/download), then [NEURON](https://github.com/neuronsimulator/nrn/releases) 8.2.4-9.0.1 (check Python compatibility, e.g. NEURON 8.2.7 is compatible with Python 3.9-3.13, while 9.0.1 is compatible with 3.10-3.14).
 
 Then, go to Settings > System > About > Advanced system settings > Environment Variables. Add the following to your Path variable: *C:\path\to\anaconda3\Scripts*, *C:\path\to\anaconda3*, *C:\path\to\anaconda3\Library\bin*, and *C:\nrn\bin*.
 
